@@ -3,12 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Navigation({ currentPage, onNavigate }) {
     const { user, profile, signOut } = useAuth();
-    const [showUserMenu, setShowUserMenu] = useState(false);
-    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     const handleLogout = async () => {
         await signOut();
-        // AuthContext will handle redirect to login
     };
 
     const menuItems = [
@@ -21,108 +18,59 @@ export default function Navigation({ currentPage, onNavigate }) {
     ];
 
     return (
-        <nav className="bg-white shadow-sm border-b border-gray-200">
+        <nav className="bg-secondary-800 border-b border-gray-700 shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
-                    {/* Logo and Brand */}
-                    <div className="flex items-center">
-                        <h1 className="text-xl font-bold text-primary-700">ATR Express</h1>
-                        <span className="ml-2 text-sm text-gray-500 hidden sm:inline">Sales CRM</span>
-                    </div>
-
-                    {/* Desktop Menu */}
-                    <div className="hidden md:flex md:items-center md:space-x-4">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => onNavigate(item.id)}
-                                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentPage === item.id
-                                    ? 'bg-primary-100 text-primary-700'
-                                    : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span className="mr-1">{item.icon}</span>
-                                {item.label}
-                            </button>
-                        ))}
-
-                        {/* User Menu */}
-                        <div className="relative ml-3">
-                            <button
-                                onClick={() => setShowUserMenu(!showUserMenu)}
-                                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center">
-                                    {user?.email?.[0]?.toUpperCase() || 'U'}
-                                </div>
-                                <span className="hidden lg:inline">{user?.email}</span>
-                            </button>
-
-                            {showUserMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
-                                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
-                                        <p className="font-medium">{user?.email}</p>
-                                        <p className="text-xs text-gray-500 mt-1">Sales Representative</p>
-                                    </div>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                    >
-                                        🚪 Logout
-                                    </button>
-                                </div>
-                            )}
+                    <div className="flex">
+                        <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('dashboard')}>
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-900/50">
+                                <span className="text-secondary-900 font-bold text-xs tracking-tighter">ATR</span>
+                            </div>
+                            <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATR Express</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v2.0 Dark</span>
                         </div>
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center">
+                    <div className="flex items-center space-x-4">
+                        <div className="hidden md:flex items-center space-x-2 mr-4">
+                            <span className="text-sm font-medium text-gray-300">{profile?.full_name}</span>
+                            <span className="text-xs px-2 py-1 rounded bg-secondary-700 text-primary-400 font-mono border border-gray-700">{profile?.role}</span>
+                        </div>
                         <button
-                            onClick={() => setShowMobileMenu(!showMobileMenu)}
-                            className="p-2 rounded-md text-gray-700 hover:bg-gray-100"
+                            onClick={handleLogout}
+                            className="text-gray-400 hover:text-primary-400 transition-colors p-2 rounded-lg hover:bg-secondary-700"
+                            title="Sign Out"
                         >
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 01 3 3v1" />
                             </svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Menu */}
-            {showMobileMenu && (
-                <div className="md:hidden border-t border-gray-200">
-                    <div className="px-2 pt-2 pb-3 space-y-1">
-                        {menuItems.map((item) => (
+            {/* Mobile Navigation Bar */}
+            <div className="bg-secondary-900 border-t border-gray-800 overflow-x-auto">
+                <div className="max-w-7xl mx-auto px-2 flex space-x-1 py-2">
+                    {menuItems.map(item => (
+                        (!item.role || item.role === profile?.role) && (
                             <button
                                 key={item.id}
-                                onClick={() => {
-                                    onNavigate(item.id);
-                                    setShowMobileMenu(false);
-                                }}
-                                className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${currentPage === item.id
-                                    ? 'bg-primary-100 text-primary-700'
-                                    : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
+                                onClick={() => onNavigate(item.id)}
+                                className={`
+                                    flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+                                    ${currentPage === item.id
+                                        ? 'bg-gradient-to-r from-primary-900/40 to-primary-900/10 text-primary-400 border border-primary-900/50 shadow-[0_0_10px_rgba(212,175,55,0.1)]'
+                                        : 'text-gray-400 hover:bg-secondary-700 hover:text-gray-200'}
+                                `}
                             >
-                                <span className="mr-2">{item.icon}</span>
+                                <span className={`mr-2 ${currentPage === item.id ? 'text-primary-500' : 'text-gray-500'}`}>{item.icon}</span>
                                 {item.label}
                             </button>
-                        ))}
-                        <div className="border-t border-gray-200 pt-2 mt-2">
-                            <div className="px-3 py-2 text-sm text-gray-700">
-                                <p className="font-medium">{user?.email}</p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md"
-                            >
-                                🚪 Logout
-                            </button>
-                        </div>
-                    </div>
+                        )
+                    ))}
                 </div>
-            )}
+            </div>
         </nav>
     );
 }

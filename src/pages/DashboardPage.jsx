@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency, formatDate, getStatusColor } from '../lib/utils';
 
-export default function DashboardPage({ onEditInquiry }) {
+export default function DashboardPage({ onEditInquiry, onNavigate }) {
     const { user, profile } = useAuth();
     const [inquiries, setInquiries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,20 @@ export default function DashboardPage({ onEditInquiry }) {
 
             setInquiries(inqData || []);
             calculateStats(inqData || [], count || 0);
-            generateTodoList(inqData || []);
+            // Fetch Admin Pending Items if Admin
+            let pUsers = [], pComms = [], pReqs = [];
+            if (profile?.role === 'admin') {
+                const { data: dUsers } = await supabase.rpc('get_pending_users');
+                const { data: dComms } = await supabase.rpc('get_pending_commissions');
+                const { data: dReqs } = await supabase.rpc('get_pending_awb_requests');
+                pUsers = dUsers || [];
+                pComms = dComms || [];
+                pReqs = dReqs || [];
+            }
+
+            setInquiries(inqData || []);
+            calculateStats(inqData || [], count || 0);
+            generateTodoList(inqData || [], pUsers, pComms, pReqs);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -67,8 +80,35 @@ export default function DashboardPage({ onEditInquiry }) {
         setStats({ totalRevenue, totalGP, activeInquiries, totalLeads: leadCount });
     };
 
-    const generateTodoList = (data) => {
+    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = []) => {
         const tasks = [];
+
+        // 1. Admin Tasks (High Priority)
+        if (profile?.role === 'admin') {
+            if (pendingUsers.length > 0) {
+                tasks.push({
+                    type: 'Approval',
+                    text: `${pendingUsers.length} New User(s) waiting for approval`,
+                    link: 'ops'
+                });
+            }
+            if (pendingCommissions.length > 0) {
+                tasks.push({
+                    type: 'Approval',
+                    text: `${pendingCommissions.length} Commission(s) waiting for review`,
+                    link: 'ops'
+                });
+            }
+            if (pendingRequests.length > 0) {
+                tasks.push({
+                    type: 'Approval',
+                    text: `${pendingRequests.length} AWB Request(s) pending`,
+                    link: 'ops'
+                });
+            }
+        }
+
+        // 2. Sales Tasks
         data.forEach(inq => {
             const daysSince = (new Date() - new Date(inq.created_at)) / (1000 * 60 * 60 * 24);
 
@@ -89,7 +129,7 @@ export default function DashboardPage({ onEditInquiry }) {
                 return;
             }
         });
-        setTodoList(tasks.slice(0, 5)); // Show top 5
+        setTodoList(tasks.slice(0, 7)); // Show top 7
     };
 
     const handleDelete = async (id) => {
@@ -111,12 +151,13 @@ export default function DashboardPage({ onEditInquiry }) {
 
     const renderTodoBadge = (type) => {
         const colors = {
-            'Urgent': 'bg-red-100 text-red-800',
-            'Follow Up': 'bg-yellow-100 text-yellow-800',
-            'Closing': 'bg-green-100 text-green-800',
-            'Payment': 'bg-purple-100 text-purple-800',
+            'Urgent': 'bg-red-900/50 text-red-200 border border-red-800',
+            'Follow Up': 'bg-yellow-900/50 text-yellow-200 border border-yellow-800',
+            'Closing': 'bg-green-900/50 text-green-200 border border-green-800',
+            'Payment': 'bg-purple-900/50 text-purple-200 border border-purple-800',
+            'Approval': 'bg-blue-900/50 text-blue-200 border border-blue-800',
         };
-        return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[type] || 'bg-gray-100'}`}>{type}</span>;
+        return <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${colors[type] || 'bg-gray-800 text-gray-400'}`}>{type}</span>;
     };
 
     if (loading) {
@@ -130,15 +171,15 @@ export default function DashboardPage({ onEditInquiry }) {
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Sales Dashboard</h1>
-                <p className="text-gray-600">Welcome, {user?.email}</p>
+                <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard</h1>
+                <p className="text-gray-400">Welcome, {user?.email}</p>
             </header>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="card p-4">
-                    <h3 className="text-xs font-medium text-gray-500 uppercase">Total Revenue</h3>
-                    <p className="text-xl font-bold text-primary-600 mt-1">
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total Revenue</h3>
+                    <p className="text-xl font-bold text-primary-400 mt-1 shadow-gold">
                         {formatCurrency(stats.totalRevenue)}
                     </p>
                 </div>
@@ -146,22 +187,22 @@ export default function DashboardPage({ onEditInquiry }) {
                 {/* Total GP - Admin Only */}
                 {profile?.role === 'admin' && (
                     <div className="card p-4">
-                        <h3 className="text-xs font-medium text-gray-500 uppercase">Total GP</h3>
-                        <p className="text-xl font-bold text-green-600 mt-1">
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total GP</h3>
+                        <p className="text-xl font-bold text-green-400 mt-1">
                             {formatCurrency(stats.totalGP)}
                         </p>
                     </div>
                 )}
 
                 <div className="card p-4">
-                    <h3 className="text-xs font-medium text-gray-500 uppercase">Active Inquiries</h3>
-                    <p className="text-2xl font-bold text-orange-600 mt-1">
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Active Inquiries</h3>
+                    <p className="text-2xl font-bold text-orange-400 mt-1">
                         {stats.activeInquiries}
                     </p>
                 </div>
                 <div className="card p-4">
-                    <h3 className="text-xs font-medium text-gray-500 uppercase">Total Leads</h3>
-                    <p className="text-2xl font-bold text-blue-600 mt-1">
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total Leads</h3>
+                    <p className="text-2xl font-bold text-blue-400 mt-1">
                         {stats.totalLeads}
                     </p>
                 </div>
@@ -170,21 +211,28 @@ export default function DashboardPage({ onEditInquiry }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* To-Do List Widget */}
                 <div className="card lg:col-span-1 h-fit">
-                    <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-                        <h2 className="text-lg font-semibold text-gray-800">⚡ To-Do List</h2>
-                        <span className="text-xs text-gray-500">{todoList.length} tasks</span>
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                        <h2 className="text-lg font-semibold text-gray-200">⚡ To-Do List</h2>
+                        <span className="text-xs text-gray-400">{todoList.length} tasks</span>
                     </div>
                     {todoList.length === 0 ? (
                         <p className="text-gray-500 text-sm p-2">🎉 All caught up! No pending tasks.</p>
                     ) : (
                         <ul className="space-y-3">
                             {todoList.map((task, idx) => (
-                                <li key={idx} className="flex flex-col p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => onEditInquiry && onEditInquiry(inquiries.find(i => i.id === task.id))}>
+                                <li key={idx} className="flex flex-col p-3 bg-secondary-700 rounded-lg hover:bg-secondary-600 transition-all cursor-pointer border border-gray-700 hover:border-primary-500/30"
+                                    onClick={() => {
+                                        if (task.link === 'ops') {
+                                            if (onNavigate) onNavigate('ops');
+                                        } else {
+                                            onEditInquiry && onEditInquiry(inquiries.find(i => i.id === task.id));
+                                        }
+                                    }}>
                                     <div className="flex justify-between items-start">
                                         {renderTodoBadge(task.type)}
-                                        <span className="text-xs text-gray-400">Action req.</span>
+                                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">Action req.</span>
                                     </div>
-                                    <p className="text-sm font-medium text-gray-700 mt-1">{task.text}</p>
+                                    <p className="text-sm font-medium text-gray-200 mt-1">{task.text}</p>
                                 </li>
                             ))}
                         </ul>
@@ -194,10 +242,10 @@ export default function DashboardPage({ onEditInquiry }) {
                 {/* Inquiries Table */}
                 <div className="card lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold">Active Inquiries</h2>
+                        <h2 className="text-lg font-semibold text-gray-200">Active Inquiries</h2>
                         <button
                             onClick={fetchDashboardData}
-                            className="text-sm text-primary-600 hover:text-primary-700"
+                            className="text-xs text-primary-400 hover:text-primary-300 uppercase tracking-wider font-semibold"
                         >
                             🔄 Refresh
                         </button>
@@ -209,20 +257,20 @@ export default function DashboardPage({ onEditInquiry }) {
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className="min-w-full divide-y divide-gray-700">
+                                <thead className="bg-secondary-900/50">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue / GP</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue / GP</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="divide-y divide-gray-700">
                                     {inquiries.slice(0, 10).map((inquiry) => (
-                                        <tr key={inquiry.id} className="hover:bg-gray-50">
+                                        <tr key={inquiry.id} className="hover:bg-secondary-700/50 transition-colors">
                                             <td className="px-4 py-3 text-sm">
-                                                <div className="font-medium text-gray-900">{inquiry.customer_name}</div>
+                                                <div className="font-medium text-gray-200">{inquiry.customer_name}</div>
                                                 <div className="text-xs text-gray-500">{inquiry.origin} → {inquiry.destination}</div>
                                             </td>
                                             <td className="px-4 py-3 text-sm">
@@ -231,18 +279,18 @@ export default function DashboardPage({ onEditInquiry }) {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm">
-                                                <div className="text-gray-900">{formatCurrency(inquiry.est_revenue)}</div>
-                                                <div className="text-xs text-green-600">GP: {formatCurrency(inquiry.est_gp)}</div>
+                                                <div className="text-gray-300 font-mono">{formatCurrency(inquiry.est_revenue)}</div>
+                                                <div className="text-xs text-green-400">GP: {formatCurrency(inquiry.est_gp)}</div>
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="flex space-x-2">
                                                     {inquiry.phone && (
-                                                        <a href={`https://wa.me/${inquiry.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800" title="WhatsApp">📱</a>
+                                                        <a href={`https://wa.me/${inquiry.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400" title="WhatsApp">📱</a>
                                                     )}
                                                     {inquiry.email && (
-                                                        <a href={`mailto:${inquiry.email}`} className="text-blue-600 hover:text-blue-800" title="Email">📧</a>
+                                                        <a href={`mailto:${inquiry.email}`} className="text-blue-500 hover:text-blue-400" title="Email">📧</a>
                                                     )}
-                                                    <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-600 hover:text-gray-800">✏️</button>
+                                                    <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors">✏️</button>
                                                 </div>
                                             </td>
                                         </tr>

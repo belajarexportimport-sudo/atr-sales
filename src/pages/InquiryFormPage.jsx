@@ -254,12 +254,12 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">New Inquiry</h1>
-                <p className="text-gray-600">Create a new customer inquiry</p>
+                <h1 className="text-2xl font-bold text-gray-100">New Inquiry</h1>
+                <p className="text-gray-400">Create a new customer inquiry</p>
             </header>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <div className="bg-red-900/40 border border-red-800 text-red-200 px-4 py-3 rounded-lg mb-4">
                     {error}
                 </div>
             )}
@@ -267,14 +267,14 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             <form onSubmit={handleSubmit} className="card space-y-6">
                 {/* Lead Info Badge */}
                 {leadId && (
-                    <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
-                        ℹ️ This RFQ is linked to an existing lead. Customer information is pre-filled and locked.
+                    <div className="bg-blue-900/40 border border-blue-800 text-blue-200 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <span className="text-xl">ℹ️</span> This RFQ is linked to an existing lead. Customer information is pre-filled and locked.
                     </div>
                 )}
 
                 {/* Customer Information */}
                 <div>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Customer Information</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Customer Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="label">Customer Name *</label>
@@ -371,7 +371,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
                 {/* Shipment Information */}
                 <div>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Shipment Information</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Shipment Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="label">Origin *</label>
@@ -478,7 +478,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
                                 {/* Pending Badge - when request is pending */}
                                 {!formData.awb_number && inquiry?.awb_request_id && (
-                                    <span className="px-3 py-2 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-md">
+                                    <span className="px-3 py-2 bg-yellow-900/40 border border-yellow-700 text-yellow-500 text-sm font-medium rounded-md">
                                         ⏳ AWB Pending
                                     </span>
                                 )}
@@ -504,7 +504,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
                 {/* Financial Information */}
                 <div>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Financial Information</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Financial Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="label">Est. Revenue (IDR)</label>
@@ -535,60 +535,75 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             </div>
                         )}
 
-                        {/* Commission - Visible to All, Amount Hidden Until Approved */}
+                        {/* Commission - Editable for Admin, Read-Only for Sales */}
                         <div className="relative">
                             <label className="label flex items-center gap-2">
                                 <span>💰 Your Commission</span>
                                 {formData.commission_approved && (
-                                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold rounded-full shadow-lg">
+                                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-bold uppercase rounded-full shadow-lg border border-yellow-400">
                                         ✓ APPROVED
                                     </span>
                                 )}
                             </label>
 
-                            {formData.commission_approved ? (
-                                // Approved - Show amount with gold styling
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        className="input-field bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-400 text-yellow-900 font-bold text-lg"
-                                        value={formatCurrency(formData.est_commission)}
-                                        disabled
-                                        readOnly
-                                    />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500">
-                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                                        </svg>
+                            {profile?.role === 'admin' ? (
+                                // Admin View: Editable Number Input
+                                <div className="space-y-2">
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span className="text-gray-400 sm:text-sm">Rp</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            name="est_commission"
+                                            className="input-field pl-10 bg-secondary-800 border-yellow-600 text-yellow-500 font-bold text-lg focus:ring-yellow-500 focus:border-yellow-500"
+                                            placeholder="0"
+                                            value={formData.est_commission}
+                                            onChange={handleChange}
+                                            step="500"
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                                        <span className="text-yellow-500/80">Formula (Active): GP × 2% = {formatCurrency(formData.est_gp * 0.02)}</span>
+                                        {!formData.commission_approved && formData.est_commission > 0 && isEditMode && (
+                                            <button
+                                                type="button"
+                                                onClick={handleApproveCommission}
+                                                className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs"
+                                            >
+                                                ✓ Approve
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
-                                // Not Approved - Show pending message
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        className="input-field bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400"
-                                        value="⏳ Pending Admin Approval"
-                                        disabled
-                                        readOnly
-                                    />
-                                </div>
-                            )}
-
-                            {/* Admin Only: Show formula and approve button */}
-                            {profile?.role === 'admin' && (
-                                <div className="mt-2 space-y-2">
-                                    <p className="text-xs text-gray-500">
-                                        Formula: (Revenue - GP) × 2% = {formatCurrency(formData.est_commission)}
-                                    </p>
-                                    {!formData.commission_approved && formData.est_commission > 0 && isEditMode && (
-                                        <button
-                                            type="button"
-                                            onClick={handleApproveCommission}
-                                            className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-semibold rounded-lg hover:from-yellow-500 hover:to-amber-600 shadow-lg transform hover:scale-105 transition-all"
-                                        >
-                                            ✓ Approve Commission
-                                        </button>
+                                // Sales View: Read-Only Formatted
+                                <div>
+                                    {formData.commission_approved ? (
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                className="input-field bg-gradient-to-r from-secondary-800 to-secondary-900 border-2 border-yellow-600 text-yellow-500 font-bold text-lg shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                                                value={formatCurrency(formData.est_commission)}
+                                                disabled
+                                                readOnly
+                                            />
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500">
+                                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                className="input-field bg-secondary-800 border-2 border-dashed border-gray-600 text-gray-400 italic"
+                                                value="⏳ Pending Admin Approval"
+                                                disabled
+                                                readOnly
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             )}

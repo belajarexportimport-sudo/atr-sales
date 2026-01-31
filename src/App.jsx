@@ -87,7 +87,7 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onEditInquiry={handleEditInquiry} />;
+        return <DashboardPage onEditInquiry={handleEditInquiry} onNavigate={setCurrentPage} />;
       case 'leads':
         return <LeadsPage onCreateRFQ={handleCreateRFQFromLead} />;
       case 'new-inquiry':

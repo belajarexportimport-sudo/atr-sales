@@ -96,8 +96,8 @@ export default function LeadsPage({ onCreateRFQ }) {
             <header className="mb-6">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
-                        <p className="text-gray-600">Company & prospect database</p>
+                        <h1 className="text-2xl font-bold text-gray-100">Leads</h1>
+                        <p className="text-gray-400">Company & prospect database</p>
                     </div>
                     <button
                         onClick={() => setShowModal(true)}
@@ -111,15 +111,15 @@ export default function LeadsPage({ onCreateRFQ }) {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="card">
-                    <h3 className="text-sm font-medium text-gray-500">Total Leads</h3>
-                    <p className="text-2xl font-bold text-primary-600 mt-2">
+                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Total Leads</h3>
+                    <p className="text-2xl font-bold text-primary-400 mt-2 shadow-gold">
                         {stats.totalLeads}
                     </p>
                 </div>
 
                 <div className="card">
-                    <h3 className="text-sm font-medium text-gray-500">Hot Leads</h3>
-                    <p className="text-2xl font-bold text-red-600 mt-2">
+                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Hot Leads</h3>
+                    <p className="text-2xl font-bold text-red-400 mt-2">
                         {stats.hotLeads}
                     </p>
                 </div>
@@ -128,10 +128,10 @@ export default function LeadsPage({ onCreateRFQ }) {
             {/* Leads Table */}
             <div className="card">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">All Leads</h2>
+                    <h2 className="text-lg font-semibold text-gray-200">All Leads</h2>
                     <button
                         onClick={fetchLeads}
-                        className="text-sm text-primary-600 hover:text-primary-700"
+                        className="text-xs text-primary-400 hover:text-primary-300 uppercase tracking-wider font-semibold"
                     >
                         🔄 Refresh
                     </button>
@@ -143,35 +143,35 @@ export default function LeadsPage({ onCreateRFQ }) {
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PIC</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Company</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">PIC</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Phone</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Created</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-700">
                                 {leads.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                    <tr key={lead.id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-200">
                                             {lead.company_name}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">
+                                        <td className="px-4 py-3 text-sm text-gray-400">
                                             {lead.pic_name || '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">
+                                        <td className="px-4 py-3 text-sm text-gray-400">
                                             {lead.phone || '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">
+                                        <td className="px-4 py-3 text-sm text-gray-400">
                                             {lead.email || '-'}
                                         </td>
                                         <td className="px-4 py-3 text-sm">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLeadStatusColor(lead.status)}`}>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getLeadStatusColor(lead.status)}`}>
                                                 {lead.status}
                                             </span>
                                         </td>
@@ -179,13 +179,13 @@ export default function LeadsPage({ onCreateRFQ }) {
                                             {formatDate(lead.created_at)}
                                         </td>
                                         <td className="px-4 py-3 text-sm space-x-2">
-                                            <div className="flex space-x-2">
+                                            <div className="flex space-x-2 items-center">
                                                 {lead.phone && (
                                                     <a
                                                         href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-green-600 hover:text-green-800"
+                                                        className="text-green-500 hover:text-green-400"
                                                         title="WhatsApp"
                                                     >
                                                         📱
@@ -194,7 +194,7 @@ export default function LeadsPage({ onCreateRFQ }) {
                                                 {lead.email && (
                                                     <a
                                                         href={`mailto:${lead.email}`}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="text-blue-500 hover:text-blue-400"
                                                         title="Email"
                                                     >
                                                         📧
@@ -204,29 +204,29 @@ export default function LeadsPage({ onCreateRFQ }) {
                                                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.company_name)}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-orange-600 hover:text-orange-800"
+                                                    className="text-orange-500 hover:text-orange-400"
                                                     title="Search on Maps"
                                                 >
                                                     📍
                                                 </a>
-                                                <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                                                <div className="w-px h-4 bg-gray-600 mx-1"></div>
                                                 <button
                                                     onClick={() => handleCreateRFQ(lead)}
-                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                    className="text-primary-400 hover:text-primary-300"
                                                     title="Create RFQ"
                                                 >
                                                     📝
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(lead)}
-                                                    className="text-gray-600 hover:text-gray-800"
+                                                    className="text-gray-400 hover:text-white"
                                                     title="Edit"
                                                 >
                                                     ✏️
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(lead.id)}
-                                                    className="text-red-400 hover:text-red-600"
+                                                    className="text-red-400 hover:text-red-300"
                                                     title="Delete"
                                                 >
                                                     🗑️

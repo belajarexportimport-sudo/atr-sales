@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'ATR Express Sales CRM',
         short_name: 'ATR CRM',
         description: 'Sales CRM PWA for ATR Express field sales team',
-        theme_color: '#2563eb',
-        background_color: '#ffffff',
+        theme_color: '#111827',
+        background_color: '#111827',
         display: 'standalone',
         icons: [
           {

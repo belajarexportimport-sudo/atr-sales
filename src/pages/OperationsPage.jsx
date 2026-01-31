@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatCurrency } from '../lib/utils';
 
 export default function OperationsPage() {
     const { user } = useAuth();
@@ -18,12 +18,15 @@ export default function OperationsPage() {
     const [loadingRequests, setLoadingRequests] = useState(true);
     const [pendingUsers, setPendingUsers] = useState([]);
     const [loadingUsers, setLoadingUsers] = useState(true);
+    const [pendingCommissions, setPendingCommissions] = useState([]);
+    const [loadingCommissions, setLoadingCommissions] = useState(true);
     const [userInitials, setUserInitials] = useState({});
 
     // Fetch pending AWB requests and users on mount
     useEffect(() => {
         fetchPendingRequests();
         fetchPendingUsers();
+        fetchPendingCommissions();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -206,16 +209,66 @@ export default function OperationsPage() {
         }
     };
 
+
+
+    // Fetch pending commissions
+    const fetchPendingCommissions = async () => {
+        try {
+            setLoadingCommissions(true);
+            const { data, error } = await supabase.rpc('get_pending_commissions');
+
+            if (error) throw error;
+            setPendingCommissions(data || []);
+        } catch (error) {
+            console.error('Error fetching pending commissions:', error);
+        } finally {
+            setLoadingCommissions(false);
+        }
+    };
+
+    // Handle Commission Change
+    const handleCommissionChange = (inquiryId, newAmount) => {
+        setPendingCommissions(prev => prev.map(comm =>
+            comm.inquiry_id === inquiryId
+                ? { ...comm, est_commission: newAmount }
+                : comm
+        ));
+    };
+
+    // Approve Commission
+    const handleApproveCommission = async (inquiryId, salesName, amount) => {
+        if (!confirm(`Approve commission of ${formatCurrency(amount)} for ${salesName}?`)) return;
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.rpc('approve_commission', {
+                p_inquiry_id: inquiryId,
+                p_approved_by: user.id,
+                p_commission_amount: amount // Pass the edited amount
+            });
+
+            if (error) throw error;
+
+            alert('✅ Commission Approved!');
+            fetchPendingCommissions(); // Refresh list
+        } catch (error) {
+            console.error('Error approving commission:', error);
+            alert(`❌ Failed to approve: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="p-4 md:p-6 max-w-7xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
-                <p className="text-gray-600">User Approvals, AWB Approvals & Shipment Status Updates</p>
+                <h1 className="text-2xl font-bold text-gray-100">Operations Dashboard</h1>
+                <p className="text-gray-400">User Approvals, AWB Approvals & Shipment Status Updates</p>
             </header>
 
             {/* Pending User Approvals Section */}
             <div className="card mb-6">
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">👤 Pending User Approvals</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">👤 Pending User Approvals</h2>
 
                 {loadingUsers ? (
                     <p className="text-gray-500">Loading users...</p>
@@ -223,22 +276,22 @@ export default function OperationsPage() {
                     <p className="text-gray-500">No pending user approvals</p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registered</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Initials</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Registered</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Initials</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-700">
                                 {pendingUsers.map((usr) => (
-                                    <tr key={usr.user_id}>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{usr.email}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{usr.full_name || '-'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(usr.created_at)}</td>
+                                    <tr key={usr.user_id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm text-gray-200">{usr.email}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-200">{usr.full_name || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400">{formatDate(usr.created_at)}</td>
                                         <td className="px-4 py-3 text-sm">
                                             <input
                                                 type="text"
@@ -249,7 +302,7 @@ export default function OperationsPage() {
                                                     ...prev,
                                                     [usr.user_id]: e.target.value.toUpperCase()
                                                 }))}
-                                                className="w-16 px-2 py-1 border border-gray-300 rounded text-center font-mono uppercase"
+                                                className="w-16 px-2 py-1 bg-secondary-800 border border-gray-600 rounded text-center font-mono uppercase text-gray-200 focus:border-primary-500"
                                             />
                                         </td>
                                         <td className="px-4 py-3 text-sm">
@@ -278,9 +331,67 @@ export default function OperationsPage() {
                 )}
             </div>
 
+            {/* Pending Commission Approvals Section */}
+            <div className="card mb-6 border-l-4 border-yellow-500 bg-secondary-800/80">
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">💰 Pending Commission Approvals</h2>
+
+                {loadingCommissions ? (
+                    <p className="text-gray-500">Loading commissions...</p>
+                ) : pendingCommissions.length === 0 ? (
+                    <p className="text-gray-500">No pending commission requests</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales Rep</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue (IDR)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GP (IDR)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Comm (IDR)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-700">
+                                {pendingCommissions.map((comm) => (
+                                    <tr key={comm.inquiry_id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-200">{comm.sales_rep}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400">{comm.customer_name}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400 font-mono">{formatCurrency(comm.est_revenue)}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400 font-mono">{formatCurrency(comm.est_gp)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <div className="flex flex-col gap-1">
+                                                <input
+                                                    type="number"
+                                                    value={comm.est_commission}
+                                                    onChange={(e) => handleCommissionChange(comm.inquiry_id, e.target.value)}
+                                                    className="w-28 px-2 py-1 bg-secondary-900 border border-yellow-600 rounded text-right font-mono font-bold text-yellow-500 focus:ring-yellow-500 focus:border-yellow-500 text-xs"
+                                                />
+                                                <span className="text-[10px] text-gray-500">2% GP: {formatCurrency(comm.est_gp * 0.02)}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(comm.created_at)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <button
+                                                onClick={() => handleApproveCommission(comm.inquiry_id, comm.sales_rep, comm.est_commission)}
+                                                disabled={loading}
+                                                className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 text-xs shadow-sm shadow-yellow-900/50"
+                                            >
+                                                ✓ Approve
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
             {/* Pending AWB Requests Section */}
             <div className="card mb-6">
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">📦 Pending AWB Requests</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">📦 Pending AWB Requests</h2>
 
                 {loadingRequests ? (
                     <p className="text-gray-500">Loading requests...</p>
@@ -288,27 +399,27 @@ export default function OperationsPage() {
                     <p className="text-gray-500">No pending AWB requests</p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sales</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Initial</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Initial</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Requested</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-700">
                                 {pendingRequests.map((req) => (
-                                    <tr key={req.request_id}>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{req.sales_name}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{req.customer_name}</td>
+                                    <tr key={req.request_id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm text-gray-200">{req.sales_name}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-200">{req.customer_name}</td>
                                         <td className="px-4 py-3 text-sm">
-                                            <span className="px-2 py-1 bg-primary-100 text-primary-800 rounded font-mono text-xs">
+                                            <span className="px-2 py-1 bg-primary-900/50 text-primary-200 border border-primary-800 rounded font-mono text-xs">
                                                 {req.sales_initial}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(req.requested_at)}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400">{formatDate(req.requested_at)}</td>
                                         <td className="px-4 py-3 text-sm">
                                             <button
                                                 onClick={() => handleApproveAWB(req.request_id, req.customer_name)}

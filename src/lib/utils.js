@@ -39,24 +39,24 @@ export function formatDate(date) {
 // Get Tailwind color class for status badge
 export function getStatusColor(status) {
     const colors = {
-        'Profiling': 'bg-blue-100 text-blue-800',
-        'Proposal': 'bg-purple-100 text-purple-800',
-        'Negotiation': 'bg-yellow-100 text-yellow-800',
-        'Won': 'bg-green-100 text-green-800',
-        'Lost': 'bg-red-100 text-red-800',
-        'Invoiced': 'bg-indigo-100 text-indigo-800',
-        'Paid': 'bg-emerald-100 text-emerald-800',
-        'Overdue': 'bg-orange-100 text-orange-800',
+        'Profiling': 'bg-blue-900/50 text-blue-200 border border-blue-800',
+        'Proposal': 'bg-purple-900/50 text-purple-200 border border-purple-800',
+        'Negotiation': 'bg-yellow-900/50 text-yellow-200 border border-yellow-800',
+        'Won': 'bg-green-900/50 text-green-200 border border-green-800',
+        'Lost': 'bg-red-900/50 text-red-200 border border-red-800',
+        'Invoiced': 'bg-indigo-900/50 text-indigo-200 border border-indigo-800',
+        'Paid': 'bg-emerald-900/50 text-emerald-200 border border-emerald-800',
+        'Overdue': 'bg-orange-900/50 text-orange-200 border border-orange-800',
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
+    return colors[status] || 'bg-gray-800 text-gray-300 border border-gray-700'
 }
 
 // Get Tailwind color class for lead status badge
 export function getLeadStatusColor(status) {
     const colors = {
-        'Cold': 'bg-blue-100 text-blue-800',
-        'Warm': 'bg-yellow-100 text-yellow-800',
-        'Hot': 'bg-red-100 text-red-800',
+        'Cold': 'bg-blue-900/50 text-blue-200 border border-blue-800',
+        'Warm': 'bg-yellow-900/50 text-yellow-200 border border-yellow-800',
+        'Hot': 'bg-red-900/50 text-red-200 border border-red-800',
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
+    return colors[status] || 'bg-gray-800 text-gray-300 border border-gray-700'
 }
