@@ -25,20 +25,18 @@ export default function DashboardPage({ onEditInquiry }) {
         try {
             setLoading(true);
 
-            // Fetch Inquiries
+            // Fetch Inquiries (all if super admin, own if regular user)
             const { data: inqData, error: inqError } = await supabase
                 .from('inquiries')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
             if (inqError) throw inqError;
 
-            // Fetch Leads Count
+            // Fetch Leads Count (all if super admin, own if regular user)
             const { count, error: leadError } = await supabase
                 .from('leads')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', user.id);
+                .select('*', { count: 'exact', head: true });
 
             if (leadError) throw leadError;
 

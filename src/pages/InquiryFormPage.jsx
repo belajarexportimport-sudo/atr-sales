@@ -26,6 +26,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         status: 'Profiling',
         shipment_date: '',
         awb_number: '',
+        awb_request_id: null,
     });
 
     // Pre-fill customer data from lead if provided
@@ -65,6 +66,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 status: inquiry.status || 'Profiling',
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
+                awb_request_id: inquiry.awb_request_id || null,
             });
         }
     }, [inquiry]);
@@ -87,6 +89,40 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             ...prev,
             [name]: value
         }));
+    };
+
+    // Request AWB Number
+    const handleRequestAWB = async () => {
+        if (!inquiry?.id) {
+            alert('❌ Please save the RFQ first before requesting AWB');
+            return;
+        }
+
+        if (!profile?.initials) {
+            alert('❌ Your profile is missing initials. Please contact admin.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const { data, error } = await supabase.rpc('request_awb', {
+                p_inquiry_id: inquiry.id,
+                p_sales_rep_id: user.id,
+                p_sales_initial: profile.initials
+            });
+
+            if (error) throw error;
+
+            alert('✅ AWB request submitted! Admin will approve shortly.');
+
+            // Refresh to show pending badge
+            if (onSuccess) onSuccess();
+        } catch (err) {
+            console.error('Error requesting AWB:', err);
+            alert('❌ Failed to request AWB: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Find or create lead
@@ -383,31 +419,37 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
                         <div>
                             <label className="label">AWB Number</label>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
                                 <input
                                     type="text"
                                     name="awb_number"
                                     className="input-field flex-1"
-                                    placeholder="ATR-20260121-0006"
+                                    placeholder="ATR-2026-001-AD"
                                     value={formData.awb_number}
                                     onChange={handleChange}
+                                    readOnly
                                 />
-                                {profile?.role === 'admin' && (
+
+                                {/* Request AWB Button - for sales without AWB */}
+                                {!formData.awb_number && !inquiry?.awb_request_id && isEditMode && (
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            const now = new Date();
-                                            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // 20260129
-                                            const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4 digit random
-                                            const newAwb = `ATR-${dateStr}-${randomSuffix}`;
-                                            setFormData(prev => ({ ...prev, awb_number: newAwb }));
-                                        }}
-                                        className="px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-100"
-                                        title="Generate Auto AWB (Admin Only)"
+                                        onClick={handleRequestAWB}
+                                        className="px-4 py-2 border border-primary-600 text-primary-600 shadow-sm text-sm font-medium rounded-md hover:bg-primary-50"
+                                        title="Request AWB Number from Admin"
                                     >
-                                        🎲 Generate
+                                        📦 Request AWB
                                     </button>
                                 )}
+
+                                {/* Pending Badge - when request is pending */}
+                                {!formData.awb_number && inquiry?.awb_request_id && (
+                                    <span className="px-3 py-2 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-md">
+                                        ⏳ AWB Pending
+                                    </span>
+                                )}
+
+                                {/* Track Button - when AWB exists */}
                                 {formData.awb_number && (
                                     <a
                                         href={`https://atrexinternational.com/track-shipment/?awb=${formData.awb_number}`}
@@ -415,10 +457,13 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                                     >
-                                        🌍 Open Tracking
+                                        🌍 Track
                                     </a>
                                 )}
                             </div>
+                            {!formData.awb_number && !isEditMode && (
+                                <p className="text-xs text-gray-500 mt-1">Save RFQ first to request AWB number</p>
+                            )}
                         </div>
                     </div>
                 </div>

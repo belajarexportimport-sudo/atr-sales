@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDate } from '../lib/utils';
 
 export default function OperationsPage() {
     const { user } = useAuth();
@@ -13,6 +14,13 @@ export default function OperationsPage() {
     });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
+    const [pendingRequests, setPendingRequests] = useState([]);
+    const [loadingRequests, setLoadingRequests] = useState(true);
+
+    // Fetch pending AWB requests on mount
+    useEffect(() => {
+        fetchPendingRequests();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -83,13 +91,100 @@ export default function OperationsPage() {
         }
     };
 
+    // Fetch pending AWB requests
+    const fetchPendingRequests = async () => {
+        try {
+            setLoadingRequests(true);
+            const { data, error } = await supabase.rpc('get_pending_awb_requests');
+
+            if (error) throw error;
+            setPendingRequests(data || []);
+        } catch (error) {
+            console.error('Error fetching pending requests:', error);
+        } finally {
+            setLoadingRequests(false);
+        }
+    };
+
+    // Approve AWB request
+    const handleApproveAWB = async (requestId, customerName) => {
+        if (!confirm(`Approve AWB request for ${customerName}?`)) return;
+
+        try {
+            setLoading(true);
+            const { data: awbNumber, error } = await supabase.rpc('approve_awb_request', {
+                p_request_id: requestId,
+                p_approved_by: user.id
+            });
+
+            if (error) throw error;
+
+            alert(`✅ AWB Generated: ${awbNumber}`);
+            fetchPendingRequests(); // Refresh list
+        } catch (error) {
+            console.error('Error approving AWB:', error);
+            alert(`❌ Failed to approve AWB: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
-                <p className="text-gray-600">Manual Shipment Status Updates</p>
+                <p className="text-gray-600">AWB Approvals & Shipment Status Updates</p>
             </header>
 
+            {/* Pending AWB Requests Section */}
+            <div className="card mb-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">📦 Pending AWB Requests</h2>
+
+                {loadingRequests ? (
+                    <p className="text-gray-500">Loading requests...</p>
+                ) : pendingRequests.length === 0 ? (
+                    <p className="text-gray-500">No pending AWB requests</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sales</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Initial</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {pendingRequests.map((req) => (
+                                    <tr key={req.request_id}>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{req.sales_name}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{req.customer_name}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <span className="px-2 py-1 bg-primary-100 text-primary-800 rounded font-mono text-xs">
+                                                {req.sales_initial}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(req.requested_at)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <button
+                                                onClick={() => handleApproveAWB(req.request_id, req.customer_name)}
+                                                disabled={loading}
+                                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                            >
+                                                ✅ Approve
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Manual Tracking Update Form */}
             <div className="card max-w-lg mx-auto">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

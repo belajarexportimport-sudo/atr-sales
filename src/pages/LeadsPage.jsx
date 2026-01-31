@@ -22,10 +22,10 @@ export default function LeadsPage({ onCreateRFQ }) {
     const fetchLeads = async () => {
         try {
             setLoading(true);
+            // Fetch all leads (RLS policy will filter based on super_admin flag)
             const { data, error } = await supabase
                 .from('leads')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
