@@ -73,8 +73,11 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         }
     }, [inquiry]);
 
-    // Auto-calculate commission when revenue or GP changes
+    // Auto-calculate commission when revenue or GP changes, BUT ONLY IF NOT APPROVED
     useEffect(() => {
+        // If commission is already approved, DO NOT overwrite it with auto-calculation
+        if (formData.commission_approved) return;
+
         const revenue = parseFloat(formData.est_revenue) || 0;
         const gp = parseFloat(formData.est_gp) || 0;
         const commission = calculateCommission(revenue, gp);
@@ -83,7 +86,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             ...prev,
             est_commission: commission
         }));
-    }, [formData.est_revenue, formData.est_gp]);
+    }, [formData.est_revenue, formData.est_gp, formData.commission_approved]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -281,7 +284,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             <input
                                 type="text"
                                 name="customer_name"
-                                className={`input-field ${leadId ? 'bg-gray-100' : ''}`}
+                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
                                 placeholder="PT. Example Company"
                                 value={formData.customer_name}
                                 onChange={handleChange}
@@ -296,7 +299,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             <input
                                 type="text"
                                 name="pic"
-                                className={`input-field ${leadId ? 'bg-gray-100' : ''}`}
+                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
                                 placeholder="John Doe"
                                 value={formData.pic}
                                 onChange={handleChange}
@@ -310,7 +313,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             <input
                                 type="text"
                                 name="industry"
-                                className={`input-field ${leadId ? 'bg-gray-100' : ''}`}
+                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
                                 placeholder="Manufacturing"
                                 value={formData.industry}
                                 onChange={handleChange}
@@ -324,7 +327,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             <input
                                 type="tel"
                                 name="phone"
-                                className={`input-field ${leadId ? 'bg-gray-100' : ''}`}
+                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
                                 placeholder="+62 812 3456 7890"
                                 value={formData.phone}
                                 onChange={handleChange}
@@ -338,7 +341,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             <input
                                 type="email"
                                 name="email"
-                                className={`input-field ${leadId ? 'bg-gray-100' : ''}`}
+                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
                                 placeholder="contact@example.com"
                                 value={formData.email}
                                 onChange={handleChange}
