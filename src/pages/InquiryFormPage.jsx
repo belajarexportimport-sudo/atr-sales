@@ -240,6 +240,16 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             if (inquiry?.id) {
                 // UPDATE existing inquiry
                 console.log('Updating existing inquiry:', inquiry.id);
+
+                // CRITICAL FIX: Prevent Sales from overwriting Admin's Commission/Approval
+                // If user is NOT admin, we remove commission fields from the update payload.
+                // This prevents the "Reset to 0" bug if Sales views stale data.
+                if (profile?.role !== 'admin') {
+                    console.log('Sales Update: Protecting commission fields from overwrite');
+                    delete inquiryData.est_commission;
+                    delete inquiryData.commission_approved;
+                }
+
                 result = await supabase
                     .from('inquiries')
                     .update(inquiryData)
