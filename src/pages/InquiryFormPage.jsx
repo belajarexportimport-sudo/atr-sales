@@ -23,6 +23,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         est_revenue: '',
         est_gp: '',
         est_commission: 0,
+        commission_approved: false,
         status: 'Profiling',
         shipment_date: '',
         awb_number: '',
@@ -63,6 +64,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 est_revenue: inquiry.est_revenue || '',
                 est_gp: inquiry.est_gp || '',
                 est_commission: inquiry.est_commission || 0,
+                commission_approved: inquiry.commission_approved || false,
                 status: inquiry.status || 'Profiling',
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
@@ -120,6 +122,38 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         } catch (err) {
             console.error('Error requesting AWB:', err);
             alert('❌ Failed to request AWB: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Approve Commission
+    const handleApproveCommission = async () => {
+        if (!inquiry?.id) {
+            alert('❌ Please save the RFQ first');
+            return;
+        }
+
+        if (!confirm(`Approve commission of ${formatCurrency(formData.est_commission)} for this RFQ?`)) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.rpc('approve_commission', {
+                p_inquiry_id: inquiry.id,
+                p_approved_by: user.id
+            });
+
+            if (error) throw error;
+
+            alert('✅ Commission approved! Sales can now see the amount.');
+
+            // Refresh to show approved status
+            if (onSuccess) onSuccess();
+        } catch (err) {
+            console.error('Error approving commission:', err);
+            alert('❌ Failed to approve commission: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -501,22 +535,64 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             </div>
                         )}
 
-                        {/* Commission - Admin Only */}
-                        {profile?.role === 'admin' && (
-                            <div>
-                                <label className="label">Est. Commission (Auto)</label>
-                                <input
-                                    type="text"
-                                    className="input-field bg-gray-100"
-                                    value={formatCurrency(formData.est_commission)}
-                                    disabled
-                                    readOnly
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Formula: (Revenue - GP) × 2%
-                                </p>
-                            </div>
-                        )}
+                        {/* Commission - Visible to All, Amount Hidden Until Approved */}
+                        <div className="relative">
+                            <label className="label flex items-center gap-2">
+                                <span>💰 Your Commission</span>
+                                {formData.commission_approved && (
+                                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold rounded-full shadow-lg">
+                                        ✓ APPROVED
+                                    </span>
+                                )}
+                            </label>
+
+                            {formData.commission_approved ? (
+                                // Approved - Show amount with gold styling
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className="input-field bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-400 text-yellow-900 font-bold text-lg"
+                                        value={formatCurrency(formData.est_commission)}
+                                        disabled
+                                        readOnly
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500">
+                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            ) : (
+                                // Not Approved - Show pending message
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className="input-field bg-gray-100 border-2 border-dashed border-gray-300 text-gray-400"
+                                        value="⏳ Pending Admin Approval"
+                                        disabled
+                                        readOnly
+                                    />
+                                </div>
+                            )}
+
+                            {/* Admin Only: Show formula and approve button */}
+                            {profile?.role === 'admin' && (
+                                <div className="mt-2 space-y-2">
+                                    <p className="text-xs text-gray-500">
+                                        Formula: (Revenue - GP) × 2% = {formatCurrency(formData.est_commission)}
+                                    </p>
+                                    {!formData.commission_approved && formData.est_commission > 0 && isEditMode && (
+                                        <button
+                                            type="button"
+                                            onClick={handleApproveCommission}
+                                            className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-semibold rounded-lg hover:from-yellow-500 hover:to-amber-600 shadow-lg transform hover:scale-105 transition-all"
+                                        >
+                                            ✓ Approve Commission
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
