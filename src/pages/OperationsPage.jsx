@@ -16,10 +16,14 @@ export default function OperationsPage() {
     const [message, setMessage] = useState(null);
     const [pendingRequests, setPendingRequests] = useState([]);
     const [loadingRequests, setLoadingRequests] = useState(true);
+    const [pendingUsers, setPendingUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+    const [userInitials, setUserInitials] = useState({});
 
-    // Fetch pending AWB requests on mount
+    // Fetch pending AWB requests and users on mount
     useEffect(() => {
         fetchPendingRequests();
+        fetchPendingUsers();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -129,12 +133,150 @@ export default function OperationsPage() {
         }
     };
 
+    // Fetch pending users
+    const fetchPendingUsers = async () => {
+        try {
+            setLoadingUsers(true);
+            const { data, error } = await supabase.rpc('get_pending_users');
+
+            if (error) throw error;
+            setPendingUsers(data || []);
+        } catch (error) {
+            console.error('Error fetching pending users:', error);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    // Approve user
+    const handleApproveUser = async (userId, email) => {
+        const initials = userInitials[userId];
+
+        if (!initials || initials.length !== 2) {
+            alert('❌ Please enter 2-letter initials (e.g., AD, RF)');
+            return;
+        }
+
+        if (!confirm(`Approve user ${email} with initials ${initials}?`)) return;
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.rpc('approve_user', {
+                p_user_id: userId,
+                p_initials: initials.toUpperCase(),
+                p_approved_by: user.id
+            });
+
+            if (error) throw error;
+
+            alert(`✅ User ${email} approved with initials ${initials}!`);
+            fetchPendingUsers(); // Refresh list
+            setUserInitials(prev => {
+                const updated = { ...prev };
+                delete updated[userId];
+                return updated;
+            });
+        } catch (error) {
+            console.error('Error approving user:', error);
+            alert(`❌ Failed to approve user: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Reject user
+    const handleRejectUser = async (userId, email) => {
+        if (!confirm(`Reject and delete user ${email}? This cannot be undone.`)) return;
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.rpc('reject_user', {
+                p_user_id: userId
+            });
+
+            if (error) throw error;
+
+            alert(`✅ User ${email} rejected and deleted.`);
+            fetchPendingUsers(); // Refresh list
+        } catch (error) {
+            console.error('Error rejecting user:', error);
+            alert(`❌ Failed to reject user: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
-                <p className="text-gray-600">AWB Approvals & Shipment Status Updates</p>
+                <p className="text-gray-600">User Approvals, AWB Approvals & Shipment Status Updates</p>
             </header>
+
+            {/* Pending User Approvals Section */}
+            <div className="card mb-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">👤 Pending User Approvals</h2>
+
+                {loadingUsers ? (
+                    <p className="text-gray-500">Loading users...</p>
+                ) : pendingUsers.length === 0 ? (
+                    <p className="text-gray-500">No pending user approvals</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registered</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Initials</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {pendingUsers.map((usr) => (
+                                    <tr key={usr.user_id}>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{usr.email}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{usr.full_name || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(usr.created_at)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <input
+                                                type="text"
+                                                maxLength={2}
+                                                placeholder="AD"
+                                                value={userInitials[usr.user_id] || ''}
+                                                onChange={(e) => setUserInitials(prev => ({
+                                                    ...prev,
+                                                    [usr.user_id]: e.target.value.toUpperCase()
+                                                }))}
+                                                className="w-16 px-2 py-1 border border-gray-300 rounded text-center font-mono uppercase"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleApproveUser(usr.user_id, usr.email)}
+                                                    disabled={loading}
+                                                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-xs"
+                                                >
+                                                    ✅ Approve
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRejectUser(usr.user_id, usr.email)}
+                                                    disabled={loading}
+                                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-xs"
+                                                >
+                                                    ❌ Reject
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
 
             {/* Pending AWB Requests Section */}
             <div className="card mb-6">
