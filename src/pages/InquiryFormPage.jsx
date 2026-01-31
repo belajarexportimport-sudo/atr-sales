@@ -236,12 +236,27 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 awb_number: formData.awb_number || null,
             };
 
-            const { data, error: insertError } = await supabase
-                .from('inquiries')
-                .insert([inquiryData])
-                .select();
+            let result;
+            if (inquiry?.id) {
+                // UPDATE existing inquiry
+                console.log('Updating existing inquiry:', inquiry.id);
+                result = await supabase
+                    .from('inquiries')
+                    .update(inquiryData)
+                    .eq('id', inquiry.id)
+                    .select();
+            } else {
+                // INSERT new inquiry
+                console.log('Inserting new inquiry');
+                result = await supabase
+                    .from('inquiries')
+                    .insert([inquiryData])
+                    .select();
+            }
 
-            if (insertError) throw insertError;
+            const { data, error: submitError } = result;
+
+            if (submitError) throw submitError;
 
             // Success! Redirect to dashboard
             alert('Inquiry saved successfully!');
