@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency, formatDate, getStatusColor } from '../lib/utils';
 
 export default function DashboardPage({ onEditInquiry }) {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [inquiries, setInquiries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
