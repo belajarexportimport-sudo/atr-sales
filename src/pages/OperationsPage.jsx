@@ -244,7 +244,7 @@ export default function OperationsPage() {
             const { error } = await supabase.rpc('approve_commission', {
                 p_inquiry_id: inquiryId,
                 p_approved_by: user.id,
-                p_commission_amount: amount // Pass the edited amount
+                p_commission_amount: parseFloat(amount) // Pass the edited amount as number
             });
 
             if (error) throw error;
