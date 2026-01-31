@@ -485,32 +485,38 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                             />
                         </div>
 
-                        <div>
-                            <label className="label">Est. GP (IDR)</label>
-                            <input
-                                type="number"
-                                name="est_gp"
-                                className="input-field"
-                                placeholder="200000"
-                                value={formData.est_gp}
-                                onChange={handleChange}
-                                step="1000"
-                            />
-                        </div>
+                        {/* GP - Admin Only */}
+                        {profile?.role === 'admin' && (
+                            <div>
+                                <label className="label">Est. GP (IDR)</label>
+                                <input
+                                    type="number"
+                                    name="est_gp"
+                                    className="input-field"
+                                    placeholder="200000"
+                                    value={formData.est_gp}
+                                    onChange={handleChange}
+                                    step="1000"
+                                />
+                            </div>
+                        )}
 
-                        <div>
-                            <label className="label">Est. Commission (Auto)</label>
-                            <input
-                                type="text"
-                                className="input-field bg-gray-100"
-                                value={formatCurrency(formData.est_commission)}
-                                disabled
-                                readOnly
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                Formula: (Revenue - GP) × 2%
-                            </p>
-                        </div>
+                        {/* Commission - Admin Only */}
+                        {profile?.role === 'admin' && (
+                            <div>
+                                <label className="label">Est. Commission (Auto)</label>
+                                <input
+                                    type="text"
+                                    className="input-field bg-gray-100"
+                                    value={formatCurrency(formData.est_commission)}
+                                    disabled
+                                    readOnly
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Formula: (Revenue - GP) × 2%
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

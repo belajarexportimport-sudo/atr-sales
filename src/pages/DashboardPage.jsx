@@ -142,12 +142,17 @@ export default function DashboardPage({ onEditInquiry }) {
                         {formatCurrency(stats.totalRevenue)}
                     </p>
                 </div>
-                <div className="card p-4">
-                    <h3 className="text-xs font-medium text-gray-500 uppercase">Total GP</h3>
-                    <p className="text-xl font-bold text-green-600 mt-1">
-                        {formatCurrency(stats.totalGP)}
-                    </p>
-                </div>
+
+                {/* Total GP - Admin Only */}
+                {profile?.role === 'admin' && (
+                    <div className="card p-4">
+                        <h3 className="text-xs font-medium text-gray-500 uppercase">Total GP</h3>
+                        <p className="text-xl font-bold text-green-600 mt-1">
+                            {formatCurrency(stats.totalGP)}
+                        </p>
+                    </div>
+                )}
+
                 <div className="card p-4">
                     <h3 className="text-xs font-medium text-gray-500 uppercase">Active Inquiries</h3>
                     <p className="text-2xl font-bold text-orange-600 mt-1">
