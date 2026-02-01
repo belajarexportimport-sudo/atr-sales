@@ -289,6 +289,15 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 <p className="text-gray-400">Create a new customer inquiry</p>
             </header>
 
+            {/* DEBUG BANNER - VISIBLE TO USER */}
+            <div className="bg-black border-2 border-yellow-400 p-4 mb-4 rounded-lg font-mono text-xs text-yellow-400">
+                <h3 className="font-bold border-b border-yellow-900 pb-1 mb-2">🕵️‍♂️ DEBUG INFO (Screenshot Ini)</h3>
+                <p>INQUIRY ID: <span className="text-white text-lg">{inquiry?.id || 'NULL (Creating New)'}</span></p>
+                <p>EDIT MODE: <span className="text-white">{isEditMode ? 'YES' : 'NO'}</span></p>
+                <p>COMMISSION APPROVED: <span className="text-white">{formData.commission_approved ? 'YES' : 'NO'}</span></p>
+                <p>USER ROLE: <span className="text-white">{profile?.role || 'Unknown'}</span></p>
+            </div>
+
             {error && (
                 <div className="bg-red-900/40 border border-red-800 text-red-200 px-4 py-3 rounded-lg mb-4">
                     {error}
