@@ -71,7 +71,12 @@ export default function DebugPage() {
                 <h2 className="font-bold border-b border-gray-600 pb-2 mb-2">User Status</h2>
                 <p>User ID: {user?.id}</p>
                 <p>Role: {profile?.role}</p>
-                <p>Approved: {profile?.approved ? 'YES' : 'NO'}</p>
+                <p className={profile?.approved ? 'text-green-400' : 'text-red-400'}>
+                    Approved: {profile?.approved ? 'YES' : 'NO'}
+                </p>
+                <p className={profile?.initials ? 'text-green-400' : 'text-red-400'}>
+                    Initials: {profile?.initials || 'MISSING (Required for AWB)'}
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -99,9 +104,9 @@ export default function DebugPage() {
                 {logs.length === 0 && <p className="text-gray-600 italic">Ready to test...</p>}
                 {logs.map((log, i) => (
                     <div key={i} className={`mb-1 text-sm break-all ${log.includes('SUCCESS') || log.includes('PASSED') ? 'text-green-400' :
-                            log.includes('FAILED') ? 'text-red-400' :
-                                log.includes('WARNING') || log.includes('HINT') ? 'text-yellow-400' :
-                                    'text-gray-300'
+                        log.includes('FAILED') ? 'text-red-400' :
+                            log.includes('WARNING') || log.includes('HINT') ? 'text-yellow-400' :
+                                'text-gray-300'
                         }`}>
                         {log}
                     </div>
