@@ -25,9 +25,11 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         // Check active session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             setUser(session?.user ?? null);
-            fetchProfile(session?.user?.id);
+            if (session?.user?.id) {
+                await fetchProfile(session.user.id);
+            }
             setLoading(false);
         });
 
