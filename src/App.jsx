@@ -8,6 +8,7 @@ import InquiryFormPage from './pages/InquiryFormPage'
 import LeadsPage from './pages/LeadsPage'
 import TrackingPage from './pages/TrackingPage'
 import OperationsPage from './pages/OperationsPage'
+import DebugPage from './pages/DebugPage'
 import Navigation from './components/Navigation'
 
 function AppContent() {
@@ -88,6 +89,8 @@ function AppContent() {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage onEditInquiry={handleEditInquiry} onNavigate={setCurrentPage} />;
+      case 'debug':
+        return <DebugPage />;
       case 'leads':
         return <LeadsPage onCreateRFQ={handleCreateRFQFromLead} />;
       case 'new-inquiry':
