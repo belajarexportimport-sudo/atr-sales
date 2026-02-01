@@ -73,11 +73,14 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
             .filter(inq => inq.status === 'Won' || inq.status === 'Invoiced' || inq.status === 'Paid')
             .reduce((sum, inq) => sum + (parseFloat(inq.est_gp) || 0), 0);
 
+        const totalCommission = data
+            .reduce((sum, inq) => sum + (parseFloat(inq.commission_amount || inq.est_commission) || 0), 0);
+
         const activeInquiries = data.filter(
             inq => !['Won', 'Lost', 'Paid'].includes(inq.status)
         ).length;
 
-        setStats({ totalRevenue, totalGP, activeInquiries, totalLeads: leadCount });
+        setStats({ totalRevenue, totalGP, totalCommission, activeInquiries, totalLeads: leadCount });
     };
 
     const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = []) => {
