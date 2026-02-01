@@ -15,11 +15,28 @@ export function AuthProvider({ children }) {
             setProfile(null);
             return;
         }
-        const { data } = await supabase
+
+        let { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
             .single();
+
+        // FAILSAFE: If profile missing, force create it via RPC
+        if (!data || error) {
+            console.log("⚠️ Profile missing, attempting self-repair...");
+            const { error: rpcError } = await supabase.rpc('ensure_user_profile');
+            if (!rpcError) {
+                // Retry fetch
+                const retry = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                data = retry.data;
+            }
+        }
+
         setProfile(data);
     };
 
