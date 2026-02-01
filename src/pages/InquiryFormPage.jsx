@@ -239,6 +239,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             let result;
             if (inquiry?.id) {
                 // UPDATE existing inquiry
+                alert(`DEBUG: UPDATING Inquiry ID ${inquiry.id} (Not creating new)`); // DEBUG
                 console.log('Updating existing inquiry:', inquiry.id);
 
                 // CRITICAL FIX: Prevent Sales from overwriting Admin's Commission/Approval
@@ -246,6 +247,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 // This prevents the "Reset to 0" bug if Sales views stale data.
                 if (profile?.role !== 'admin') {
                     console.log('Sales Update: Protecting commission fields from overwrite');
+                    alert('DEBUG: Protecting Commission Data from Overwrite'); // DEBUG
                     delete inquiryData.est_commission;
                     delete inquiryData.commission_approved;
                 }
@@ -256,6 +258,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                     .eq('id', inquiry.id)
                     .select();
             } else {
+                alert('DEBUG: CREATING NEW Inquiry (Insert Mode)'); // DEBUG
                 // INSERT new inquiry
                 console.log('Inserting new inquiry');
                 result = await supabase
