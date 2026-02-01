@@ -38,26 +38,23 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         try {
             setLoading(true);
 
-            // 1. Fetch Inquiries
+            // 1. Fetch Inquiries (No Join to prevent errors)
             const { data: inqData, error: inqError } = await supabase
                 .from('inquiries')
-                .select(`
-                    *,
-                    profiles:user_id (full_name, email)
-                `)
+                .select('*')
                 .order('created_at', { ascending: false });
 
             if (inqError) throw inqError;
 
-            // 2. Fetch Sales Reps (Profiles) if Admin
-            if (profile?.role === 'admin') {
-                const { data: profilesData } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, email')
-                    .neq('role', 'admin'); // Optional: hide other admins
+            // 2. Fetch Profiles for Mapping (All Users)
+            const { data: profilesData, error: profError } = await supabase
+                .from('profiles')
+                .select('id, full_name, email');
 
-                setSalesReps(profilesData || []);
-            }
+            if (profError) console.error('Error fetching profiles:', profError);
+
+            // Save profiles for Dropdown & Table Lookup
+            setSalesReps(profilesData || []);
 
             // 3. Fetch Leads Count
             const { count, error: leadError } = await supabase
@@ -88,6 +85,12 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Helper to get sales name
+    const getSalesName = (userId) => {
+        const rep = salesReps.find(r => r.id === userId);
+        return rep ? (rep.full_name || rep.email) : 'Unknown';
     };
 
     const calculateStats = (data, leadCount, filterId) => {
@@ -341,7 +344,7 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                                                 <div className="text-xs text-gray-500">{inquiry.origin} → {inquiry.destination}</div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-400">
-                                                {inquiry.profiles?.full_name || 'Unknown'}
+                                                {getSalesName(inquiry.user_id)}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(inquiry.status)}`}>
