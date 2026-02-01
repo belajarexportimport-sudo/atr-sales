@@ -30,26 +30,31 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         awb_request_id: null,
     });
 
-    // Pre-fill customer data from lead if provided
+    // Pre-fill customer data from lead or all data from inquiry if provided
     useEffect(() => {
         if (lead) {
             setLeadId(lead.id);
             setFormData(prev => ({
                 ...prev,
-                customer_name: lead.company_name || '',
-                pic: lead.pic_name || '',
-                phone: lead.phone || '',
-                email: lead.email || '',
-                industry: lead.industry || '',
+                customer_name: lead.company_name,
+                pic: lead.pic_name,
+                phone: lead.phone,
+                email: lead.email,
+                industry: lead.industry
             }));
         }
-    }, [lead]);
 
-    // Pre-fill all data from inquiry if editing
-    useEffect(() => {
         if (inquiry) {
             setIsEditMode(true);
             setLeadId(inquiry.lead_id);
+
+            // Logic: If commission is approved (status='Approved'), show that amount.
+            // Otherwise, show the estimated commission.
+            const isApproved = inquiry.commission_status === 'Approved' || inquiry.commission_approved === true;
+            const commissionValue = isApproved
+                ? (inquiry.commission_amount || inquiry.est_commission || 0)
+                : (inquiry.est_commission || 0);
+
             setFormData({
                 customer_name: inquiry.customer_name || '',
                 pic: inquiry.pic || '',
@@ -63,15 +68,15 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 service_type: inquiry.service_type || 'Air Freight',
                 est_revenue: inquiry.est_revenue || '',
                 est_gp: inquiry.est_gp || '',
-                est_commission: inquiry.est_commission || 0,
-                commission_approved: inquiry.commission_approved || false,
+                est_commission: commissionValue, // Use the correct source
+                commission_approved: isApproved, // Bind to new logic
                 status: inquiry.status || 'Profiling',
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
                 awb_request_id: inquiry.awb_request_id || null,
             });
         }
-    }, [inquiry]);
+    }, [lead, inquiry]);
 
     // Auto-calculate commission when revenue or GP changes, BUT ONLY IF NOT APPROVED
     useEffect(() => {
