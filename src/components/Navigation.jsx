@@ -13,6 +13,7 @@ export default function Navigation({ currentPage, onNavigate }) {
         { id: 'leads', label: 'Leads', icon: '👥' },
         { id: 'new-inquiry', label: 'New RFQ', icon: '📝' },
         { id: 'tracking', label: 'Tracking', icon: '📦' },
+        { id: 'debug', label: 'Diagnose', icon: '🛠️' },
         // Only show Ops for Admin
         ...(profile?.role === 'admin' ? [{ id: 'ops', label: 'Ops', icon: '🔧' }] : []),
     ];
@@ -27,7 +28,7 @@ export default function Navigation({ currentPage, onNavigate }) {
                                 <span className="text-secondary-900 font-bold text-xs tracking-tighter">ATR</span>
                             </div>
                             <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATR Express</span>
-                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v2.5 DIAGNOSE</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v2.6 FIX</span>
                         </div>
                     </div>
 
