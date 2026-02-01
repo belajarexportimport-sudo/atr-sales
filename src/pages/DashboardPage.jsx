@@ -197,6 +197,14 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                     </div>
                 )}
 
+                {/* Total Commission - Visible to All */}
+                <div className="card p-4">
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Your Commission</h3>
+                    <p className="text-xl font-bold text-yellow-400 mt-1 shadow-gold">
+                        {formatCurrency(stats.totalCommission)}
+                    </p>
+                </div>
+
                 <div className="card p-4">
                     <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Active Inquiries</h3>
                     <p className="text-2xl font-bold text-orange-400 mt-1">
