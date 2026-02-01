@@ -242,7 +242,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             let result;
             if (inquiry?.id) {
                 // UPDATE existing inquiry
-                alert(`DEBUG: UPDATING Inquiry ID ${inquiry.id} (Not creating new)`); // DEBUG
+
                 console.log('Updating existing inquiry:', inquiry.id);
 
                 // CRITICAL FIX: Prevent Sales from overwriting Admin's Commission/Approval
@@ -250,7 +250,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 // This prevents the "Reset to 0" bug if Sales views stale data.
                 if (profile?.role !== 'admin') {
                     console.log('Sales Update: Protecting commission fields from overwrite');
-                    alert('DEBUG: Protecting Commission Data from Overwrite'); // DEBUG
+
                     delete inquiryData.est_commission;
                     delete inquiryData.commission_approved;
                 }
@@ -261,7 +261,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                     .eq('id', inquiry.id)
                     .select();
             } else {
-                alert('DEBUG: CREATING NEW Inquiry (Insert Mode)'); // DEBUG
+
                 // INSERT new inquiry
                 console.log('Inserting new inquiry');
                 result = await supabase
@@ -288,7 +288,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">New Inquiry</h1>
+                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v2.4 Clean)</h1>
                 <p className="text-gray-400">Create a new customer inquiry</p>
             </header>
 

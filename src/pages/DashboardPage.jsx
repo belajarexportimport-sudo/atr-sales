@@ -171,7 +171,7 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard</h1>
+                <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v2.4)</h1>
                 <p className="text-gray-400">Welcome, {user?.email}</p>
             </header>
 
