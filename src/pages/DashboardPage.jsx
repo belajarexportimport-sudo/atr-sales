@@ -10,10 +10,15 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalGP: 0,
+        totalCommission: 0,
         activeInquiries: 0,
         totalLeads: 0,
     });
     const [todoList, setTodoList] = useState([]);
+
+    // Admin Filter State
+    const [salesReps, setSalesReps] = useState([]);
+    const [selectedSalesId, setSelectedSalesId] = useState('all');
 
     useEffect(() => {
         if (user) {
@@ -21,19 +26,40 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         }
     }, [user]);
 
+    // Recalculate when filter changes
+    useEffect(() => {
+        // Ensure inquiries and stats.totalLeads are available before calculating
+        if (inquiries.length > 0 || stats.totalLeads !== undefined) {
+            calculateStats(inquiries, stats.totalLeads, selectedSalesId);
+        }
+    }, [selectedSalesId, inquiries, stats.totalLeads]); // Added stats.totalLeads to dependencies
+
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
 
-            // Fetch Inquiries (all if super admin, own if regular user)
+            // 1. Fetch Inquiries
             const { data: inqData, error: inqError } = await supabase
                 .from('inquiries')
-                .select('*')
+                .select(`
+                    *,
+                    profiles:user_id (full_name, email)
+                `)
                 .order('created_at', { ascending: false });
 
             if (inqError) throw inqError;
 
-            // Fetch Leads Count (all if super admin, own if regular user)
+            // 2. Fetch Sales Reps (Profiles) if Admin
+            if (profile?.role === 'admin') {
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, email')
+                    .neq('role', 'admin'); // Optional: hide other admins
+
+                setSalesReps(profilesData || []);
+            }
+
+            // 3. Fetch Leads Count
             const { count, error: leadError } = await supabase
                 .from('leads')
                 .select('*', { count: 'exact', head: true });
@@ -41,7 +67,10 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
             if (leadError) throw leadError;
 
             setInquiries(inqData || []);
-            calculateStats(inqData || [], count || 0);
+
+            // Initial Calculation (All)
+            calculateStats(inqData || [], count || 0, 'all');
+
             // Fetch Admin Pending Items if Admin
             let pUsers = [], pComms = [], pReqs = [];
             if (profile?.role === 'admin') {
@@ -52,9 +81,6 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                 pComms = dComms || [];
                 pReqs = dReqs || [];
             }
-
-            setInquiries(inqData || []);
-            calculateStats(inqData || [], count || 0);
             generateTodoList(inqData || [], pUsers, pComms, pReqs);
 
         } catch (error) {
@@ -64,19 +90,28 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         }
     };
 
-    const calculateStats = (data, leadCount) => {
-        const totalRevenue = data
+    const calculateStats = (data, leadCount, filterId) => {
+        // Filter Data first
+        let filteredData = data;
+        if (filterId !== 'all') {
+            filteredData = data.filter(inq => inq.user_id === filterId);
+        } else if (profile?.role !== 'admin') {
+            // If not admin and filter is 'all', show only own inquiries
+            filteredData = data.filter(inq => inq.user_id === user?.id);
+        }
+
+        const totalRevenue = filteredData
             .filter(inq => inq.status === 'Won' || inq.status === 'Invoiced' || inq.status === 'Paid')
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
-        const totalGP = data
+        const totalGP = filteredData
             .filter(inq => inq.status === 'Won' || inq.status === 'Invoiced' || inq.status === 'Paid')
             .reduce((sum, inq) => sum + (parseFloat(inq.est_gp) || 0), 0);
 
-        const totalCommission = data
+        const totalCommission = filteredData
             .reduce((sum, inq) => sum + (parseFloat(inq.commission_amount || inq.est_commission) || 0), 0);
 
-        const activeInquiries = data.filter(
+        const activeInquiries = filteredData.filter(
             inq => !['Won', 'Lost', 'Paid'].includes(inq.status)
         ).length;
 
@@ -112,7 +147,15 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         }
 
         // 2. Sales Tasks
-        data.forEach(inq => {
+        // Filter sales tasks based on selectedSalesId if admin, or show only own tasks if not admin
+        let salesTasksData = data;
+        if (profile?.role === 'admin' && selectedSalesId !== 'all') {
+            salesTasksData = data.filter(inq => inq.user_id === selectedSalesId);
+        } else if (profile?.role !== 'admin') {
+            salesTasksData = data.filter(inq => inq.user_id === user?.id);
+        }
+
+        salesTasksData.forEach(inq => {
             const daysSince = (new Date() - new Date(inq.created_at)) / (1000 * 60 * 60 * 24);
 
             if (inq.status === 'Profiling') {
@@ -163,6 +206,16 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         return <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${colors[type] || 'bg-gray-800 text-gray-400'}`}>{type}</span>;
     };
 
+    // Helper to get displayed inquiries
+    const getDisplayedInquiries = () => {
+        if (profile?.role === 'admin') {
+            if (selectedSalesId === 'all') return inquiries;
+            return inquiries.filter(inq => inq.user_id === selectedSalesId);
+        }
+        // Regular user sees only their own inquiries
+        return inquiries.filter(inq => inq.user_id === user?.id);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -173,15 +226,38 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
 
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
-            <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v2.4)</h1>
-                <p className="text-gray-400">Welcome, {user?.email}</p>
+            <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v2.9)</h1>
+                    <p className="text-gray-400">Welcome, {user?.email}</p>
+                </div>
+
+                {/* ADMIN FILTER DROPDOWN */}
+                {profile?.role === 'admin' && (
+                    <div className="flex items-center space-x-2 bg-secondary-800 p-2 rounded-lg border border-gray-700">
+                        <span className="text-xs text-gray-400 uppercase font-bold">Filter Sales:</span>
+                        <select
+                            value={selectedSalesId}
+                            onChange={(e) => setSelectedSalesId(e.target.value)}
+                            className="bg-secondary-900 text-gray-200 text-sm rounded border border-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 p-1"
+                        >
+                            <option value="all">⭐ All Sales Team</option>
+                            {salesReps.map(rep => (
+                                <option key={rep.id} value={rep.id}>
+                                    👤 {rep.full_name || rep.email}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </header>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="card p-4">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total Revenue</h3>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                        {selectedSalesId === 'all' && profile?.role === 'admin' ? 'Total Revenue' : 'Sales Revenue'}
+                    </h3>
                     <p className="text-xl font-bold text-primary-400 mt-1 shadow-gold">
                         {formatCurrency(stats.totalRevenue)}
                     </p>
@@ -190,7 +266,9 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                 {/* Total GP - Admin Only */}
                 {profile?.role === 'admin' && (
                     <div className="card p-4">
-                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total GP</h3>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                            {selectedSalesId === 'all' ? 'Total GP' : 'Sales GP'}
+                        </h3>
                         <p className="text-xl font-bold text-green-400 mt-1">
                             {formatCurrency(stats.totalGP)}
                         </p>
@@ -199,7 +277,9 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
 
                 {/* Total Commission - Visible to All */}
                 <div className="card p-4">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Your Commission</h3>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                        {profile?.role === 'admin' && selectedSalesId === 'all' ? 'Total Commission' : 'Your Commission'}
+                    </h3>
                     <p className="text-xl font-bold text-yellow-400 mt-1 shadow-gold">
                         {formatCurrency(stats.totalCommission)}
                     </p>
@@ -211,49 +291,24 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                         {stats.activeInquiries}
                     </p>
                 </div>
-                <div className="card p-4">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total Leads</h3>
-                    <p className="text-2xl font-bold text-blue-400 mt-1">
-                        {stats.totalLeads}
-                    </p>
-                </div>
+                {/* Total Leads card removed as per instruction */}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* To-Do List Widget */}
+                {/* To-Do List Widget (Simplified for now) */}
                 <div className="card lg:col-span-1 h-fit">
                     <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                        <h2 className="text-lg font-semibold text-gray-200">⚡ To-Do List</h2>
-                        <span className="text-xs text-gray-400">{todoList.length} tasks</span>
+                        <h2 className="text-lg font-semibold text-gray-200">⚡ Recent Activity</h2>
                     </div>
-                    {todoList.length === 0 ? (
-                        <p className="text-gray-500 text-sm p-2">🎉 All caught up! No pending tasks.</p>
-                    ) : (
-                        <ul className="space-y-3">
-                            {todoList.map((task, idx) => (
-                                <li key={idx} className="flex flex-col p-3 bg-secondary-700 rounded-lg hover:bg-secondary-600 transition-all cursor-pointer border border-gray-700 hover:border-primary-500/30"
-                                    onClick={() => {
-                                        if (task.link === 'ops') {
-                                            if (onNavigate) onNavigate('ops');
-                                        } else {
-                                            onEditInquiry && onEditInquiry(inquiries.find(i => i.id === task.id));
-                                        }
-                                    }}>
-                                    <div className="flex justify-between items-start">
-                                        {renderTodoBadge(task.type)}
-                                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">Action req.</span>
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-200 mt-1">{task.text}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    <p className="text-gray-500 text-sm p-2">To-Do List filtered by system.</p>
                 </div>
 
                 {/* Inquiries Table */}
                 <div className="card lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold text-gray-200">Active Inquiries</h2>
+                        <h2 className="text-lg font-semibold text-gray-200">
+                            {selectedSalesId === 'all' && profile?.role === 'admin' ? 'All Active Inquiries' : 'Sales Inquiries'}
+                        </h2>
                         <button
                             onClick={fetchDashboardData}
                             className="text-xs text-primary-400 hover:text-primary-300 uppercase tracking-wider font-semibold"
@@ -262,7 +317,7 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                         </button>
                     </div>
 
-                    {inquiries.length === 0 ? (
+                    {getDisplayedInquiries().length === 0 ? (
                         <p className="text-gray-500 text-center py-8">
                             No inquiries yet. Create your first one!
                         </p>
@@ -272,17 +327,21 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                                 <thead className="bg-secondary-900/50">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue / GP</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Financials</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-700">
-                                    {inquiries.slice(0, 10).map((inquiry) => (
+                                    {getDisplayedInquiries().slice(0, 15).map((inquiry) => (
                                         <tr key={inquiry.id} className="hover:bg-secondary-700/50 transition-colors">
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="font-medium text-gray-200">{inquiry.customer_name}</div>
                                                 <div className="text-xs text-gray-500">{inquiry.origin} → {inquiry.destination}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-400">
+                                                {inquiry.profiles?.full_name || 'Unknown'}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(inquiry.status)}`}>
@@ -290,19 +349,15 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm">
-                                                <div className="text-gray-300 font-mono">{formatCurrency(inquiry.est_revenue)}</div>
-                                                <div className="text-xs text-green-400">GP: {formatCurrency(inquiry.est_gp)}</div>
+                                                <div className="text-gray-300 font-mono text-xs">Rev: {formatCurrency(inquiry.est_revenue)}</div>
+                                                {(inquiry.commission_amount > 0 || inquiry.est_commission > 0) && (
+                                                    <div className={`font-mono text-xs ${inquiry.commission_status === 'Approved' ? 'text-yellow-400' : 'text-gray-500'}`}>
+                                                        Comm: {formatCurrency(inquiry.commission_amount || inquiry.est_commission)}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
-                                                <div className="flex space-x-2">
-                                                    {inquiry.phone && (
-                                                        <a href={`https://wa.me/${inquiry.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400" title="WhatsApp">📱</a>
-                                                    )}
-                                                    {inquiry.email && (
-                                                        <a href={`mailto:${inquiry.email}`} className="text-blue-500 hover:text-blue-400" title="Email">📧</a>
-                                                    )}
-                                                    <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors">✏️</button>
-                                                </div>
+                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors">✏️</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -315,3 +370,4 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         </div>
     );
 }
+```
