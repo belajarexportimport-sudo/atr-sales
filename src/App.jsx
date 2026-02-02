@@ -153,12 +153,15 @@ function AppContent() {
 }
 
 import { ToastProvider } from './contexts/ToastContext'
+import { ModalProvider } from './contexts/ModalContext'
 
 function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppContent />
+        <ModalProvider>
+          <AppContent />
+        </ModalProvider>
       </ToastProvider>
     </AuthProvider>
   )
