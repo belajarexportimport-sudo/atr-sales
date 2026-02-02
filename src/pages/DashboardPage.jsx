@@ -1,84 +1,75 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase'; // REMOVED: Services only
 import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency, formatDate, getStatusColor } from '../lib/utils';
+import { formatCurrency, getStatusColor, calculateCommission } from '../lib/utils';
+// Services
+import { inquiryService } from '../services/inquiryService';
+import { userService } from '../services/userService';
+import { leadService } from '../services/leadService';
+import { commissionService } from '../services/commissionService';
 
-export default function DashboardPage({ onEditInquiry, onNavigate }) {
+export default function DashboardPage({ onEditInquiry }) {
     const { user, profile } = useAuth();
-    const [inquiries, setInquiries] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalGP: 0,
         totalCommission: 0,
         activeInquiries: 0,
-        totalLeads: 0,
+        totalLeads: 0
     });
-    const [todoList, setTodoList] = useState([]);
-
-    // Admin Filter State
+    const [inquiries, setInquiries] = useState([]);
     const [salesReps, setSalesReps] = useState([]);
     const [selectedSalesId, setSelectedSalesId] = useState('all');
+    const [loading, setLoading] = useState(true);
+    const [todoList, setTodoList] = useState([]);
 
     useEffect(() => {
-        if (user) {
-            fetchDashboardData();
-        }
-    }, [user]);
+        fetchDashboardData();
+    }, [profile]); // Fetch when profile loads
 
-    // Recalculate when filter changes
     useEffect(() => {
-        // Ensure inquiries and stats.totalLeads are available before calculating
+        // Ensure inquiries available before calculating
         if (inquiries.length > 0 || stats.totalLeads !== undefined) {
             calculateStats(inquiries, stats.totalLeads, selectedSalesId);
         }
-    }, [selectedSalesId, inquiries, stats.totalLeads]); // Added stats.totalLeads to dependencies
+    }, [selectedSalesId, inquiries, stats.totalLeads]);
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
 
-            // 1. Fetch Inquiries (No Join to prevent errors)
-            const { data: inqData, error: inqError } = await supabase
-                .from('inquiries')
-                .select('*')
-                .order('created_at', { ascending: false });
+            // 1. Fetch Inquiries (Services handles Admin/Sales logic internally, but for Dashboard "All" view
+            // we might need raw access. However, inquiryService.getDashboardData handles filters.)
+            // For the initial load, we want EVERYTHING (for admin) or OWN (for sales).
+            // inquiryService.getDashboardData defaults to 'all' filter for admin.
+            const inqData = await inquiryService.getDashboardData(profile?.role, user?.id, 'all');
 
-            if (inqError) throw inqError;
-
-            // 2. Fetch Profiles for Mapping (All Users)
-            const { data: profilesData, error: profError } = await supabase
-                .from('profiles')
-                .select('id, full_name, email');
-
-            if (profError) console.error('Error fetching profiles:', profError);
-
-            // Save profiles for Dropdown & Table Lookup
-            setSalesReps(profilesData || []);
+            // 2. Fetch Profiles (Admin Only or for Sales Name mapping)
+            // We need profiles to map names in the table even for 'all' view.
+            const profilesData = await userService.getAllSalesReps();
+            setSalesReps(profilesData);
 
             // 3. Fetch Leads Count
-            const { count, error: leadError } = await supabase
-                .from('leads')
-                .select('*', { count: 'exact', head: true });
+            const leadCount = await leadService.getCount();
 
-            if (leadError) throw leadError;
+            setInquiries(inqData);
 
-            setInquiries(inqData || []);
+            // Calculate initial stats
+            calculateStats(inqData, leadCount, 'all');
 
-            // Initial Calculation (All)
-            calculateStats(inqData || [], count || 0, 'all');
-
-            // Fetch Admin Pending Items if Admin
+            // 4. Fetch Admin Todo Items
             let pUsers = [], pComms = [], pReqs = [];
             if (profile?.role === 'admin') {
-                const { data: dUsers } = await supabase.rpc('get_pending_users');
-                const { data: dComms } = await supabase.rpc('get_pending_commissions');
-                const { data: dReqs } = await supabase.rpc('get_pending_awb_requests');
-                pUsers = dUsers || [];
-                pComms = dComms || [];
-                pReqs = dReqs || [];
+                const [dUsers, dComms, dReqs] = await Promise.all([
+                    userService.getPendingUsers(),
+                    commissionService.getPendingCommissionsList(),
+                    inquiryService.getPendingAWBRequests()
+                ]);
+                pUsers = dUsers;
+                pComms = dComms;
+                pReqs = dReqs;
             }
-            generateTodoList(inqData || [], pUsers, pComms, pReqs);
+            generateTodoList(inqData, pUsers, pComms, pReqs);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -87,30 +78,33 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
         }
     };
 
-    // Helper to get sales name
-    const getSalesName = (userId) => {
-        const rep = salesReps.find(r => r.id === userId);
+    const getSalesName = (id) => {
+        const rep = salesReps.find(r => r.id === id);
         return rep ? (rep.full_name || rep.email) : 'Unknown';
     };
 
     const calculateStats = (data, leadCount, filterId) => {
-        // Filter Data first
+        if (!data) return;
+
         let filteredData = data;
-        if (filterId !== 'all') {
+
+        // Frontend Filtering for Stats (Dynamic)
+        if (profile?.role === 'admin' && filterId !== 'all') {
             filteredData = data.filter(inq => inq.user_id === filterId);
         } else if (profile?.role !== 'admin') {
-            // If not admin and filter is 'all', show only own inquiries
+            // Safety double-check, though Service handles this
             filteredData = data.filter(inq => inq.user_id === user?.id);
         }
 
         const totalRevenue = filteredData
-            .filter(inq => inq.status === 'Won' || inq.status === 'Invoiced' || inq.status === 'Paid')
+            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
         const totalGP = filteredData
-            .filter(inq => inq.status === 'Won' || inq.status === 'Invoiced' || inq.status === 'Paid')
+            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
             .reduce((sum, inq) => sum + (parseFloat(inq.est_gp) || 0), 0);
 
+        // Uses commission_amount (Verified) if available, else est_commission
         const totalCommission = filteredData
             .reduce((sum, inq) => sum + (parseFloat(inq.commission_amount || inq.est_commission) || 0), 0);
 
@@ -124,129 +118,77 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
     const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = []) => {
         const tasks = [];
 
-        // 1. Admin Tasks (High Priority)
+        // 1. Admin Tasks
         if (profile?.role === 'admin') {
             if (pendingUsers.length > 0) {
                 tasks.push({
-                    type: 'Approval',
-                    text: `${pendingUsers.length} New User(s) waiting for approval`,
-                    link: 'ops'
+                    id: 'users',
+                    type: 'admin',
+                    title: `👥 ${pendingUsers.length} User Approval`,
+                    desc: 'New users waiting for access',
+                    priority: 'high'
                 });
             }
             if (pendingCommissions.length > 0) {
                 tasks.push({
-                    type: 'Approval',
-                    text: `${pendingCommissions.length} Commission(s) waiting for review`,
-                    link: 'ops'
+                    id: 'commissions',
+                    type: 'admin',
+                    title: `💰 ${pendingCommissions.length} Commission Approval`,
+                    desc: 'Review sales commissions',
+                    priority: 'high'
                 });
             }
             if (pendingRequests.length > 0) {
                 tasks.push({
-                    type: 'Approval',
-                    text: `${pendingRequests.length} AWB Request(s) pending`,
-                    link: 'ops'
+                    id: 'awb',
+                    type: 'admin',
+                    title: `📦 ${pendingRequests.length} AWB Request`,
+                    desc: 'Sales requesting AWB numbers',
+                    priority: 'medium'
                 });
             }
         }
 
-        // 2. Sales Tasks
-        // Filter sales tasks based on selectedSalesId if admin, or show only own tasks if not admin
-        let salesTasksData = data;
-        if (profile?.role === 'admin' && selectedSalesId !== 'all') {
-            salesTasksData = data.filter(inq => inq.user_id === selectedSalesId);
-        } else if (profile?.role !== 'admin') {
-            salesTasksData = data.filter(inq => inq.user_id === user?.id);
+        // 2. Sales Tasks (Follow Ups)
+        const followUps = data.filter(inq =>
+            (inq.status === 'Profiling' || inq.status === 'Proposal') &&
+            (inq.user_id === user?.id) // Only own tasks
+        );
+
+        if (followUps.length > 0) {
+            tasks.push({
+                id: 'followup',
+                type: 'sales',
+                title: `📞 ${followUps.length} Follow Ups`,
+                desc: 'Profiling/Proposal stage inquiries',
+                priority: 'medium'
+            });
         }
 
-        salesTasksData.forEach(inq => {
-            const daysSince = (new Date() - new Date(inq.created_at)) / (1000 * 60 * 60 * 24);
-
-            if (inq.status === 'Profiling') {
-                tasks.push({ type: 'Urgent', text: `Send Proposal to ${inq.customer_name}`, id: inq.id });
-                return;
-            }
-            if (inq.status === 'Proposal' && daysSince > 2) {
-                tasks.push({ type: 'Follow Up', text: `Follow up ${inq.customer_name} (Sent 2 days ago)`, id: inq.id });
-                return;
-            }
-            if (inq.status === 'Negotiation') {
-                tasks.push({ type: 'Closing', text: `Close deal with ${inq.customer_name}`, id: inq.id });
-                return;
-            }
-            if (inq.status === 'Invoiced' && daysSince > 14) {
-                tasks.push({ type: 'Payment', text: `Check payment from ${inq.customer_name}`, id: inq.id });
-                return;
-            }
-        });
-        setTodoList(tasks.slice(0, 7)); // Show top 7
+        setTodoList(tasks);
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this inquiry?')) return;
-
-        try {
-            const { error } = await supabase
-                .from('inquiries')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            fetchDashboardData();
-        } catch (error) {
-            console.error('Error deleting inquiry:', error);
-            alert('Failed to delete inquiry');
-        }
-    };
-
-    const renderTodoBadge = (type) => {
-        const colors = {
-            'Urgent': 'bg-red-900/50 text-red-200 border border-red-800',
-            'Follow Up': 'bg-yellow-900/50 text-yellow-200 border border-yellow-800',
-            'Closing': 'bg-green-900/50 text-green-200 border border-green-800',
-            'Payment': 'bg-purple-900/50 text-purple-200 border border-purple-800',
-            'Approval': 'bg-blue-900/50 text-blue-200 border border-blue-800',
-        };
-        return <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${colors[type] || 'bg-gray-800 text-gray-400'}`}>{type}</span>;
-    };
-
-    // Helper to get displayed inquiries
+    // Filter displayed rows based on selectedSalesId
     const getDisplayedInquiries = () => {
-        if (profile?.role === 'admin') {
-            if (selectedSalesId === 'all') return inquiries;
+        if (profile?.role === 'admin' && selectedSalesId !== 'all') {
             return inquiries.filter(inq => inq.user_id === selectedSalesId);
         }
-        // Regular user sees only their own inquiries
-        return inquiries.filter(inq => inq.user_id === user?.id);
+        return inquiries;
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            </div>
-        );
-    }
+    if (loading) return <div className="p-8 text-center text-gray-400">Loading Dashboard...</div>;
 
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
-            {/* DEBUG PANEL (Visible to help diagnose "Blank" issue) */}
-            <div className="bg-red-900/30 border border-red-500/50 p-2 mb-4 rounded text-xs font-mono text-red-200">
-                <p><strong>🩺 DIAGNOSTIC MODE:</strong></p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
-                    <div>User ID: {user?.id}</div>
-                    <div>Role: {profile?.role}</div>
-                    <div>Total Fetched: {inquiries.length}</div>
-                    <div>Displayed: {getDisplayedInquiries().length}</div>
-                </div>
-            </div>
-
-            <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v3.3 DEBUG)</h1>
-                    <p className="text-gray-400">Welcome, {user?.email}</p>
+                    <h1 className="text-2xl font-bold text-gray-100">
+                        Hello, {profile?.full_name?.split(' ')[0] || 'Sales'} 👋
+                    </h1>
+                    <p className="text-gray-400 text-sm">Here is your sales overview</p>
                 </div>
 
-                {/* ADMIN FILTER DROPDOWN */}
+                {/* Admin Sales Filter */}
                 {profile?.role === 'admin' && (
                     <div className="flex items-center space-x-2 bg-secondary-800 p-2 rounded-lg border border-gray-700">
                         <span className="text-xs text-gray-400 uppercase font-bold">Filter Sales:</span>
@@ -305,16 +247,28 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                         {stats.activeInquiries}
                     </p>
                 </div>
-                {/* Total Leads card removed as per instruction */}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* To-Do List Widget (Simplified for now) */}
+                {/* To-Do List Widget */}
                 <div className="card lg:col-span-1 h-fit">
                     <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
                         <h2 className="text-lg font-semibold text-gray-200">⚡ Recent Activity</h2>
                     </div>
-                    <p className="text-gray-500 text-sm p-2">To-Do List filtered by system.</p>
+                    {todoList.length === 0 ? (
+                        <p className="text-gray-500 text-sm p-2">🎉 All caught up! No pending tasks.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {todoList.map((item, idx) => (
+                                <div key={idx} className={`p-3 rounded-lg border ${item.priority === 'high' ? 'bg-red-900/20 border-red-800' : 'bg-secondary-800 border-gray-700'}`}>
+                                    <h4 className={`text-sm font-bold ${item.priority === 'high' ? 'text-red-400' : 'text-primary-400'}`}>
+                                        {item.title}
+                                    </h4>
+                                    <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Inquiries Table */}
@@ -365,7 +319,7 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="text-gray-300 font-mono text-xs">Rev: {formatCurrency(inquiry.est_revenue)}</div>
                                                 {(inquiry.commission_amount > 0 || inquiry.est_commission > 0) && (
-                                                    <div className={`font-mono text-xs ${inquiry.commission_status === 'Approved' ? 'text-yellow-400' : 'text-gray-500'}`}>
+                                                    <div className={`font-mono text-xs ${inquiry.commission_status === 'Approved' || inquiry.commission_approved ? 'text-yellow-400' : 'text-gray-500'}`}>
                                                         Comm: {formatCurrency(inquiry.commission_amount || inquiry.est_commission)}
                                                     </div>
                                                 )}

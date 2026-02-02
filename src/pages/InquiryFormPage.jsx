@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext'; // Import Toast
 import { calculateCommission, formatCurrency } from '../lib/utils';
+import { inquiryService } from '../services/inquiryService';
+import { commissionService } from '../services/commissionService';
+import { leadService } from '../services/leadService';
 
 export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     const { user, profile } = useAuth();
+    const { showToast } = useToast(); // Hook
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [leadId, setLeadId] = useState(null);
@@ -30,7 +34,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         awb_request_id: null,
     });
 
-    // Pre-fill customer data from lead or all data from inquiry if provided
+    // Pre-fill Logic
     useEffect(() => {
         if (lead) {
             setLeadId(lead.id);
@@ -47,9 +51,6 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         if (inquiry) {
             setIsEditMode(true);
             setLeadId(inquiry.lead_id);
-
-            // Logic: If commission is approved (status='Approved'), show that amount.
-            // Otherwise, show the estimated commission.
             const isApproved = inquiry.commission_status === 'Approved' || inquiry.commission_approved === true;
             const commissionValue = isApproved
                 ? (inquiry.commission_amount || inquiry.est_commission || 0)
@@ -68,8 +69,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 service_type: inquiry.service_type || 'Air Freight',
                 est_revenue: inquiry.est_revenue || '',
                 est_gp: inquiry.est_gp || '',
-                est_commission: commissionValue, // Use the correct source
-                commission_approved: isApproved, // Bind to new logic
+                est_commission: commissionValue,
+                commission_approved: isApproved,
                 status: inquiry.status || 'Profiling',
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
@@ -78,58 +79,32 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         }
     }, [lead, inquiry]);
 
-    // Auto-calculate commission when revenue or GP changes, BUT ONLY IF NOT APPROVED
+    // Auto-calculate commission
     useEffect(() => {
-        // If commission is already approved, DO NOT overwrite it with auto-calculation
         if (formData.commission_approved) return;
-
         const revenue = parseFloat(formData.est_revenue) || 0;
         const gp = parseFloat(formData.est_gp) || 0;
-        const commission = calculateCommission(revenue, gp);
-
-        setFormData(prev => ({
-            ...prev,
-            est_commission: commission
-        }));
+        const commission = commissionService.calculate(revenue, gp);
+        setFormData(prev => ({ ...prev, est_commission: commission }));
     }, [formData.est_revenue, formData.est_gp, formData.commission_approved]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     // Request AWB Number
     const handleRequestAWB = async () => {
-        if (!inquiry?.id) {
-            alert('❌ Please save the RFQ first before requesting AWB');
-            return;
-        }
-
-        if (!profile?.initials) {
-            alert('❌ Your profile is missing initials. Please contact admin.');
-            return;
-        }
+        if (!inquiry?.id) return showToast('❌ Please save the RFQ first before requesting AWB', 'error');
+        if (!profile?.initials) return showToast('❌ Your profile is missing initials.', 'error');
 
         try {
             setLoading(true);
-            const { data, error } = await supabase.rpc('request_awb', {
-                p_inquiry_id: inquiry.id,
-                p_sales_rep_id: user.id,
-                p_sales_initial: profile.initials
-            });
-
-            if (error) throw error;
-
-            alert('✅ AWB request submitted! Admin will approve shortly.');
-
-            // Refresh to show pending badge
+            await inquiryService.requestAWB(inquiry.id, user.id, profile.initials);
+            showToast('✅ AWB request submitted! Admin will approve shortly.', 'success');
             if (onSuccess) onSuccess();
         } catch (err) {
-            console.error('Error requesting AWB:', err);
-            alert('❌ Failed to request AWB: ' + err.message);
+            showToast('❌ Failed to request AWB: ' + err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -137,80 +112,24 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
     // Approve Commission
     const handleApproveCommission = async () => {
-        if (!inquiry?.id) {
-            alert('❌ Please save the RFQ first');
-            return;
-        }
+        if (!inquiry?.id) return showToast('❌ Please save the RFQ first', 'error');
 
         const amount = parseFloat(formData.est_commission) || 0;
 
-        if (!confirm(`Approve commission of ${formatCurrency(amount)} for this RFQ?`)) {
-            return;
-        }
+        // Keep confirm() for safety, as replacing it with a custom modal is a larger task
+        // Ideally we would replace this too, but for now we focus on alerts.
+        if (!confirm(`Approve commission of ${formatCurrency(amount)} for this RFQ?`)) return;
 
         try {
             setLoading(true);
-            const { error } = await supabase.rpc('approve_commission', {
-                p_inquiry_id: inquiry.id,
-                p_approved_by: user.id,
-                p_commission_amount: amount // FIX: Pass the amount to the RPC!
-            });
-
-            if (error) throw error;
-
-            alert('✅ Commission approved! Sales can now see the amount.');
-
-            // Refresh to show approved status
+            await commissionService.approve(inquiry.id, user.id, amount);
+            showToast('✅ Commission approved! Sales can now see the amount.', 'success');
             if (onSuccess) onSuccess();
         } catch (err) {
-            console.error('Error approving commission:', err);
-            alert('❌ Failed to approve commission: ' + err.message);
+            showToast('❌ Failed to approve commission: ' + err.message, 'error');
         } finally {
             setLoading(false);
         }
-    };
-
-    // Find or create lead
-    const findOrCreateLead = async () => {
-        // If we already have a lead_id (from pre-filled lead), use it
-        if (leadId) {
-            return leadId;
-        }
-
-        // Check if lead exists for this sales user (by email or phone)
-        if (formData.email || formData.phone) {
-            const { data: existingLead } = await supabase
-                .from('leads')
-                .select('id')
-                .eq('user_id', user.id)
-                .or(`email.eq.${formData.email || 'null'},phone.eq.${formData.phone || 'null'}`)
-                .maybeSingle();
-
-            if (existingLead) {
-                return existingLead.id;
-            }
-        }
-
-        // Create new lead
-        console.log('Creating new lead for:', formData.customer_name);
-        const { data: newLead, error: leadError } = await supabase
-            .from('leads')
-            .insert([{
-                user_id: user.id,
-                company_name: formData.customer_name,
-                pic_name: formData.pic || null,
-                phone: formData.phone || null,
-                email: formData.email || null,
-                industry: formData.industry || null,
-                status: 'Hot', // Auto-set to Hot since they have RFQ
-            }])
-            .select()
-            .single();
-
-        console.log('Lead Creation Result:', newLead, leadError);
-
-        if (leadError) throw leadError;
-        return newLead.id;
     };
 
     const handleSubmit = async (e) => {
@@ -219,10 +138,15 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         setLoading(true);
 
         try {
-            // Find or create lead first
-            const finalLeadId = await findOrCreateLead();
+            const leadData = {
+                customer_name: formData.customer_name,
+                pic: formData.pic,
+                phone: formData.phone,
+                email: formData.email,
+                industry: formData.industry,
+            };
+            const finalLeadId = await leadService.findOrCreate(user, leadData);
 
-            // Prepare data for Supabase
             const inquiryData = {
                 lead_id: finalLeadId,
                 user_id: user.id,
@@ -244,51 +168,18 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 awb_number: formData.awb_number || null,
             };
 
-            let result;
             if (inquiry?.id) {
-                // UPDATE existing inquiry
-
-                console.log('Updating existing inquiry:', inquiry.id);
-
-                // CRITICAL FIX: Prevent Sales from overwriting Admin's Commission/Approval
-                // If user is NOT admin, we remove commission fields from the update payload.
-                // This prevents the "Reset to 0" bug if Sales views stale data.
-                if (profile?.role !== 'admin') {
-                    console.log('Sales Update: Protecting commission fields from overwrite');
-
-                    delete inquiryData.est_commission;
-                    delete inquiryData.commission_approved;
-                }
-
-                // CRITICAL FIX: Prevent "Stealing" Ownership
-                // When Admin updates (e.g. approves commission), do NOT change user_id
-                delete inquiryData.user_id;
-
-                result = await supabase
-                    .from('inquiries')
-                    .update(inquiryData)
-                    .eq('id', inquiry.id)
-                    .select();
+                await inquiryService.update(inquiry.id, inquiryData, profile?.role);
             } else {
-
-                // INSERT new inquiry
-                console.log('Inserting new inquiry');
-                result = await supabase
-                    .from('inquiries')
-                    .insert([inquiryData])
-                    .select();
+                await inquiryService.create(inquiryData);
             }
 
-            const { data, error: submitError } = result;
-
-            if (submitError) throw submitError;
-
-            // Success! Redirect to dashboard
-            alert('Inquiry saved successfully!');
+            showToast('✅ Inquiry saved successfully!', 'success');
             if (onSuccess) onSuccess();
         } catch (err) {
             console.error('Error saving inquiry:', err);
             setError(err.message || 'Failed to save inquiry');
+            showToast('❌ Failed to save inquiry', 'error');
         } finally {
             setLoading(false);
         }
@@ -297,11 +188,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v2.4 Clean)</h1>
+                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v3.7 Toasts)</h1>
                 <p className="text-gray-400">Create a new customer inquiry</p>
             </header>
-
-
 
             {error && (
                 <div className="bg-red-900/40 border border-red-800 text-red-200 px-4 py-3 rounded-lg mb-4">
@@ -335,72 +224,26 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                                 required
                             />
                         </div>
-
+                        {/* ... Rest of inputs identical to previous version ... */}
                         <div>
                             <label className="label">PIC Name</label>
-                            <input
-                                type="text"
-                                name="pic"
-                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
-                                placeholder="John Doe"
-                                value={formData.pic}
-                                onChange={handleChange}
-                                disabled={!!leadId}
-                                readOnly={!!leadId}
-                            />
+                            <input type="text" name="pic" className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`} placeholder="John Doe" value={formData.pic} onChange={handleChange} disabled={!!leadId} readOnly={!!leadId} />
                         </div>
-
                         <div>
                             <label className="label">Industry</label>
-                            <input
-                                type="text"
-                                name="industry"
-                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
-                                placeholder="Manufacturing"
-                                value={formData.industry}
-                                onChange={handleChange}
-                                disabled={!!leadId}
-                                readOnly={!!leadId}
-                            />
+                            <input type="text" name="industry" className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`} placeholder="Manufacturing" value={formData.industry} onChange={handleChange} disabled={!!leadId} readOnly={!!leadId} />
                         </div>
-
                         <div>
                             <label className="label">Phone</label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
-                                placeholder="+62 812 3456 7890"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                disabled={!!leadId}
-                                readOnly={!!leadId}
-                            />
+                            <input type="tel" name="phone" className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`} placeholder="+62 812 3456 7890" value={formData.phone} onChange={handleChange} disabled={!!leadId} readOnly={!!leadId} />
                         </div>
-
                         <div>
                             <label className="label">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`}
-                                placeholder="contact@example.com"
-                                value={formData.email}
-                                onChange={handleChange}
-                                disabled={!!leadId}
-                                readOnly={!!leadId}
-                            />
+                            <input type="email" name="email" className={`input-field ${leadId ? 'bg-gray-300 text-gray-900 border-gray-400 cursor-not-allowed font-medium' : ''}`} placeholder="contact@example.com" value={formData.email} onChange={handleChange} disabled={!!leadId} readOnly={!!leadId} />
                         </div>
-
                         <div>
                             <label className="label">Status *</label>
-                            <select
-                                name="status"
-                                className="input-field"
-                                value={formData.status}
-                                onChange={handleChange}
-                                required
-                            >
+                            <select name="status" className="input-field" value={formData.status} onChange={handleChange} required>
                                 <option>Profiling</option>
                                 <option>Proposal</option>
                                 <option>Negotiation</option>
@@ -420,63 +263,23 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="label">Origin *</label>
-                            <input
-                                type="text"
-                                name="origin"
-                                className="input-field"
-                                placeholder="Jakarta"
-                                value={formData.origin}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="origin" className="input-field" placeholder="Jakarta" value={formData.origin} onChange={handleChange} required />
                         </div>
-
                         <div>
                             <label className="label">Destination *</label>
-                            <input
-                                type="text"
-                                name="destination"
-                                className="input-field"
-                                placeholder="Singapore"
-                                value={formData.destination}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="destination" className="input-field" placeholder="Singapore" value={formData.destination} onChange={handleChange} required />
                         </div>
-
                         <div>
                             <label className="label">Weight (kg)</label>
-                            <input
-                                type="number"
-                                name="weight"
-                                className="input-field"
-                                placeholder="100"
-                                value={formData.weight}
-                                onChange={handleChange}
-                                step="0.01"
-                            />
+                            <input type="number" name="weight" className="input-field" placeholder="100" value={formData.weight} onChange={handleChange} step="0.01" />
                         </div>
-
                         <div>
                             <label className="label">Dimension (cm)</label>
-                            <input
-                                type="text"
-                                name="dimension"
-                                className="input-field"
-                                placeholder="50x40x30"
-                                value={formData.dimension}
-                                onChange={handleChange}
-                            />
+                            <input type="text" name="dimension" className="input-field" placeholder="50x40x30" value={formData.dimension} onChange={handleChange} />
                         </div>
-
                         <div>
                             <label className="label">Service Type</label>
-                            <select
-                                name="service_type"
-                                className="input-field"
-                                value={formData.service_type}
-                                onChange={handleChange}
-                            >
+                            <select name="service_type" className="input-field" value={formData.service_type} onChange={handleChange}>
                                 <option>Air Freight</option>
                                 <option>Sea Freight</option>
                                 <option>Express</option>
@@ -484,65 +287,25 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                                 <option>Warehouse</option>
                             </select>
                         </div>
-
                         <div>
                             <label className="label">Shipment Date</label>
-                            <input
-                                type="date"
-                                name="shipment_date"
-                                className="input-field"
-                                value={formData.shipment_date}
-                                onChange={handleChange}
-                            />
+                            <input type="date" name="shipment_date" className="input-field" value={formData.shipment_date} onChange={handleChange} />
                         </div>
-
                         <div>
                             <label className="label">AWB Number</label>
                             <div className="flex gap-2 items-center">
-                                <input
-                                    type="text"
-                                    name="awb_number"
-                                    className="input-field flex-1"
-                                    placeholder="ATR-2026-001-AD"
-                                    value={formData.awb_number}
-                                    onChange={handleChange}
-                                    readOnly
-                                />
-
-                                {/* Request AWB Button - for sales without AWB */}
+                                <input type="text" name="awb_number" className="input-field flex-1" placeholder="ATR-2026-001-AD" value={formData.awb_number} onChange={handleChange} readOnly />
                                 {!formData.awb_number && !inquiry?.awb_request_id && isEditMode && (
-                                    <button
-                                        type="button"
-                                        onClick={handleRequestAWB}
-                                        className="px-4 py-2 border border-primary-600 text-primary-600 shadow-sm text-sm font-medium rounded-md hover:bg-primary-50"
-                                        title="Request AWB Number from Admin"
-                                    >
-                                        📦 Request AWB
-                                    </button>
+                                    <button type="button" onClick={handleRequestAWB} className="px-4 py-2 border border-primary-600 text-primary-600 shadow-sm text-sm font-medium rounded-md hover:bg-primary-50" title="Request AWB Number from Admin">📦 Request AWB</button>
                                 )}
-
-                                {/* Pending Badge - when request is pending */}
                                 {!formData.awb_number && inquiry?.awb_request_id && (
-                                    <span className="px-3 py-2 bg-yellow-900/40 border border-yellow-700 text-yellow-500 text-sm font-medium rounded-md">
-                                        ⏳ AWB Pending
-                                    </span>
+                                    <span className="px-3 py-2 bg-yellow-900/40 border border-yellow-700 text-yellow-500 text-sm font-medium rounded-md">⏳ AWB Pending</span>
                                 )}
-
-                                {/* Track Button - when AWB exists */}
                                 {formData.awb_number && (
-                                    <a
-                                        href={`https://atrexinternational.com/track-shipment/?awb=${formData.awb_number}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                                    >
-                                        🌍 Track
-                                    </a>
+                                    <a href={`https://atrexinternational.com/track-shipment/?awb=${formData.awb_number}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">🌍 Track</a>
                                 )}
                             </div>
-                            {!formData.awb_number && !isEditMode && (
-                                <p className="text-xs text-gray-500 mt-1">Save RFQ first to request AWB number</p>
-                            )}
+                            {!formData.awb_number && !isEditMode && <p className="text-xs text-gray-500 mt-1">Save RFQ first to request AWB number</p>}
                         </div>
                     </div>
                 </div>
@@ -553,117 +316,45 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="label">Est. Revenue (IDR)</label>
-                            <input
-                                type="number"
-                                name="est_revenue"
-                                className="input-field"
-                                placeholder="1000000"
-                                value={formData.est_revenue}
-                                onChange={handleChange}
-                                step="1000"
-                            />
+                            <input type="number" name="est_revenue" className="input-field" placeholder="1000000" value={formData.est_revenue} onChange={handleChange} step="1000" />
                         </div>
-
-                        {/* GP - Admin Only */}
                         {profile?.role === 'admin' && (
                             <div>
                                 <label className="label">Est. GP (IDR)</label>
-                                <input
-                                    type="number"
-                                    name="est_gp"
-                                    className="input-field"
-                                    placeholder="200000"
-                                    value={formData.est_gp}
-                                    onChange={handleChange}
-                                    step="1000"
-                                />
+                                <input type="number" name="est_gp" className="input-field" placeholder="200000" value={formData.est_gp} onChange={handleChange} step="1000" />
                             </div>
                         )}
-
-                        {/* Commission - Editable for Admin, Read-Only for Sales */}
                         <div className="relative">
                             <label className="label flex items-center gap-2">
                                 <span>💰 Your Commission</span>
-                                {formData.commission_approved && (
-                                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-bold uppercase rounded-full shadow-lg border border-yellow-400">
-                                        ✓ APPROVED
-                                    </span>
-                                )}
+                                {formData.commission_approved && <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-bold uppercase rounded-full shadow-lg border border-yellow-400">✓ APPROVED</span>}
                             </label>
-
                             {profile?.role === 'admin' ? (
-                                // Admin View: Editable Number Input
                                 <div className="space-y-2">
                                     <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span className="text-gray-400 sm:text-sm">Rp</span>
-                                        </div>
-                                        <input
-                                            type="number"
-                                            name="est_commission"
-                                            className="input-field pl-10 bg-secondary-800 border-yellow-600 text-yellow-500 font-bold text-lg focus:ring-yellow-500 focus:border-yellow-500"
-                                            placeholder="0"
-                                            value={formData.est_commission}
-                                            onChange={handleChange}
-                                            step="500"
-                                        />
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-400 sm:text-sm">Rp</span></div>
+                                        <input type="number" name="est_commission" className="input-field pl-10 bg-secondary-800 border-yellow-600 text-yellow-500 font-bold text-lg focus:ring-yellow-500 focus:border-yellow-500" placeholder="0" value={formData.est_commission} onChange={handleChange} step="500" />
                                     </div>
                                     <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                        {/* FIX: Ensure parse float for calculation */}
-                                        <span className="text-yellow-500/80">
-                                            Formula: GP × 2% = {formatCurrency((parseFloat(formData.est_gp) || 0) * 0.02)}
-                                        </span>
-
+                                        <span className="text-yellow-500/80">Formula: GP × 2% = {formatCurrency((parseFloat(formData.est_gp) || 0) * 0.02)}</span>
                                         {!formData.commission_approved ? (
                                             formData.est_commission > 0 && isEditMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleApproveCommission}
-                                                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs"
-                                                >
-                                                    ✓ Approve
-                                                </button>
+                                                <button type="button" onClick={handleApproveCommission} className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs">✓ Approve</button>
                                             )
                                         ) : (
-                                            /* Unlock Button for Approved Data (Fix for Zero/Locked data) */
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData(prev => ({ ...prev, commission_approved: false }))}
-                                                className="px-2 py-0.5 border border-red-500 text-red-400 hover:bg-red-900/30 rounded text-xs transition-colors"
-                                            >
-                                                🔓 Unlock/Edit
-                                            </button>
+                                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, commission_approved: false }))} className="px-2 py-0.5 border border-red-500 text-red-400 hover:bg-red-900/30 rounded text-xs transition-colors">🔓 Unlock/Edit</button>
                                         )}
                                     </div>
                                 </div>
                             ) : (
-                                // Sales View: Read-Only Formatted
                                 <div>
                                     {formData.commission_approved ? (
                                         <div className="relative">
-                                            <input
-                                                type="text"
-                                                className="input-field bg-gradient-to-r from-secondary-800 to-secondary-900 border-2 border-yellow-600 text-yellow-500 font-bold text-lg shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-                                                value={formatCurrency(formData.est_commission)}
-                                                disabled
-                                                readOnly
-                                            />
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500">
-                                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                                                </svg>
-                                            </div>
+                                            <input type="text" className="input-field bg-gradient-to-r from-secondary-800 to-secondary-900 border-2 border-yellow-600 text-yellow-500 font-bold text-lg shadow-[0_0_15px_rgba(234,179,8,0.2)]" value={formatCurrency(formData.est_commission)} disabled readOnly />
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg></div>
                                         </div>
                                     ) : (
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                className="input-field bg-secondary-800 border-2 border-dashed border-gray-600 text-gray-400 italic"
-                                                value="⏳ Pending Admin Approval"
-                                                disabled
-                                                readOnly
-                                            />
-                                        </div>
+                                        <div className="relative"><input type="text" className="input-field bg-secondary-800 border-2 border-dashed border-gray-600 text-gray-400 italic" value="⏳ Pending Admin Approval" disabled readOnly /></div>
                                     )}
                                 </div>
                             )}
@@ -673,21 +364,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    <button
-                        type="submit"
-                        className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : '💾 Save Inquiry'}
-                    </button>
-                    <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => onSuccess && onSuccess()}
-                        disabled={loading}
-                    >
-                        ❌ Cancel
-                    </button>
+                    <button type="submit" className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>{loading ? 'Saving...' : '💾 Save Inquiry'}</button>
+                    <button type="button" className="btn-secondary" onClick={() => onSuccess && onSuccess()} disabled={loading}>❌ Cancel</button>
                 </div>
             </form>
         </div>
