@@ -229,9 +229,20 @@ export default function DashboardPage({ onEditInquiry, onNavigate }) {
 
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
+            {/* DEBUG PANEL (Visible to help diagnose "Blank" issue) */}
+            <div className="bg-red-900/30 border border-red-500/50 p-2 mb-4 rounded text-xs font-mono text-red-200">
+                <p><strong>🩺 DIAGNOSTIC MODE:</strong></p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                    <div>User ID: {user?.id}</div>
+                    <div>Role: {profile?.role}</div>
+                    <div>Total Fetched: {inquiries.length}</div>
+                    <div>Displayed: {getDisplayedInquiries().length}</div>
+                </div>
+            </div>
+
             <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v2.9)</h1>
+                    <h1 className="text-2xl font-bold text-gray-100">Sales Dashboard (v3.3 DEBUG)</h1>
                     <p className="text-gray-400">Welcome, {user?.email}</p>
                 </div>
 
