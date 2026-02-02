@@ -605,14 +605,29 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                                         />
                                     </div>
                                     <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                        <span className="text-yellow-500/80">Formula (Active): GP × 2% = {formatCurrency(formData.est_gp * 0.02)}</span>
-                                        {!formData.commission_approved && formData.est_commission > 0 && isEditMode && (
+                                        {/* FIX: Ensure parse float for calculation */}
+                                        <span className="text-yellow-500/80">
+                                            Formula: GP × 2% = {formatCurrency((parseFloat(formData.est_gp) || 0) * 0.02)}
+                                        </span>
+
+                                        {!formData.commission_approved ? (
+                                            formData.est_commission > 0 && isEditMode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleApproveCommission}
+                                                    className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs"
+                                                >
+                                                    ✓ Approve
+                                                </button>
+                                            )
+                                        ) : (
+                                            /* Unlock Button for Approved Data (Fix for Zero/Locked data) */
                                             <button
                                                 type="button"
-                                                onClick={handleApproveCommission}
-                                                className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs"
+                                                onClick={() => setFormData(prev => ({ ...prev, commission_approved: false }))}
+                                                className="px-2 py-0.5 border border-red-500 text-red-400 hover:bg-red-900/30 rounded text-xs transition-colors"
                                             >
-                                                ✓ Approve
+                                                🔓 Unlock/Edit
                                             </button>
                                         )}
                                     </div>
