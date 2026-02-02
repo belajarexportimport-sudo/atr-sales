@@ -28,7 +28,7 @@ export default function Navigation({ currentPage, onNavigate }) {
                                 <span className="text-secondary-900 font-bold text-xs tracking-tighter">ATR</span>
                             </div>
                             <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATR Express</span>
-                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v3.1 FIXED</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v3.2 DATA</span>
                         </div>
                     </div>
 
