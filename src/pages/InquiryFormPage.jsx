@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext'; // Import Toast
+import { useToast } from '../contexts/ToastContext';
+import { useModal } from '../contexts/ModalContext'; // Import Modal
 import { calculateCommission, formatCurrency } from '../lib/utils';
 import { inquiryService } from '../services/inquiryService';
 import { commissionService } from '../services/commissionService';
@@ -8,7 +9,8 @@ import { leadService } from '../services/leadService';
 
 export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     const { user, profile } = useAuth();
-    const { showToast } = useToast(); // Hook
+    const { showToast } = useToast();
+    const { showConfirm } = useModal(); // Hook
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [leadId, setLeadId] = useState(null);
@@ -110,26 +112,29 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         }
     };
 
-    // Approve Commission
-    const handleApproveCommission = async () => {
+    // Approve Commission (REFACTORED: Use Custom Modal)
+    const handleApproveCommission = () => {
         if (!inquiry?.id) return showToast('❌ Please save the RFQ first', 'error');
 
         const amount = parseFloat(formData.est_commission) || 0;
 
-        // Keep confirm() for safety, as replacing it with a custom modal is a larger task
-        // Ideally we would replace this too, but for now we focus on alerts.
-        if (!confirm(`Approve commission of ${formatCurrency(amount)} for this RFQ?`)) return;
-
-        try {
-            setLoading(true);
-            await commissionService.approve(inquiry.id, user.id, amount);
-            showToast('✅ Commission approved! Sales can now see the amount.', 'success');
-            if (onSuccess) onSuccess();
-        } catch (err) {
-            showToast('❌ Failed to approve commission: ' + err.message, 'error');
-        } finally {
-            setLoading(false);
-        }
+        showConfirm(
+            'Approve Commission',
+            `Approve commission of ${formatCurrency(amount)} for this RFQ?`,
+            async () => {
+                try {
+                    setLoading(true);
+                    await commissionService.approve(inquiry.id, user.id, amount);
+                    showToast('✅ Commission approved! Sales can now see the amount.', 'success');
+                    if (onSuccess) onSuccess();
+                } catch (err) {
+                    showToast('❌ Failed to approve commission: ' + err.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            },
+            'warning'
+        );
     };
 
     const handleSubmit = async (e) => {
@@ -188,7 +193,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v3.7 Toasts)</h1>
+                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v3.8 Modal)</h1>
                 <p className="text-gray-400">Create a new customer inquiry</p>
             </header>
 
