@@ -260,6 +260,10 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                     delete inquiryData.commission_approved;
                 }
 
+                // CRITICAL FIX: Prevent "Stealing" Ownership
+                // When Admin updates (e.g. approves commission), do NOT change user_id
+                delete inquiryData.user_id;
+
                 result = await supabase
                     .from('inquiries')
                     .update(inquiryData)
