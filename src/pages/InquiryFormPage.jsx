@@ -312,37 +312,114 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 <div>
                     <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Shipment Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="label">Origin *</label>
-                            <input type="text" name="origin" className="input-field" placeholder="Jakarta" value={formData.origin} onChange={handleChange} required />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="label">Origin *</label>
+                                <input type="text" name="origin" className="input-field" placeholder="Jakarta" value={formData.origin} onChange={handleChange} required />
+                            </div>
+                            <div>
+                                <label className="label">Destination *</label>
+                                <input type="text" name="destination" className="input-field" placeholder="Singapore" value={formData.destination} onChange={handleChange} required />
+                            </div>
+                            <div>
+                                <label className="label">Service Type</label>
+                                <select name="service_type" className="input-field" value={formData.service_type} onChange={handleChange}>
+                                    <option>Air Freight</option>
+                                    <option>Sea Freight</option>
+                                    <option>Express</option>
+                                    <option>Trucking</option>
+                                    <option>Warehouse</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">Shipment Date</label>
+                                <input type="date" name="shipment_date" className="input-field" value={formData.shipment_date} onChange={handleChange} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="label">Destination *</label>
-                            <input type="text" name="destination" className="input-field" placeholder="Singapore" value={formData.destination} onChange={handleChange} required />
+
+                        {/* Multi-Collie Packages Section */}
+                        <div className="mt-4 border border-gray-700 rounded-lg p-3 bg-secondary-900/30">
+                            <label className="label mb-2 flex justify-between">
+                                <span>📦 Packages ({formData.packages.length} items)</span>
+                                <span className="text-primary-400 text-xs font-normal">Total: {calculateTotalWeight()} kg</span>
+                            </label>
+
+                            <div className="space-y-3">
+                                {formData.packages.map((pkg, index) => (
+                                    <div key={index} className="grid grid-cols-12 gap-2 items-end bg-secondary-800 p-2 rounded relative group">
+                                        <div className="col-span-3">
+                                            <label className="text-[10px] text-gray-500 uppercase">Weight</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="input-field py-1 text-sm pr-6"
+                                                    value={pkg.weight}
+                                                    onChange={(e) => handlePackageChange(index, 'weight', e.target.value)}
+                                                />
+                                                <span className="absolute right-2 top-1.5 text-xs text-gray-500">kg</span>
+                                            </div>
+                                        </div>
+                                        <div className="col-span-3">
+                                            <label className="text-[10px] text-gray-500 uppercase">Dim (LxWxH)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="10x10x10"
+                                                className="input-field py-1 text-sm"
+                                                value={pkg.dimension}
+                                                onChange={(e) => handlePackageChange(index, 'dimension', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-3">
+                                            <label className="text-[10px] text-gray-500 uppercase">Type</label>
+                                            <select
+                                                className="input-field py-1 text-sm"
+                                                value={pkg.type}
+                                                onChange={(e) => handlePackageChange(index, 'type', e.target.value)}
+                                            >
+                                                <option>Box</option>
+                                                <option>Pallet</option>
+                                                <option>Crate</option>
+                                                <option>Bundle</option>
+                                                <option>Drum</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-3">
+                                            <label className="text-[10px] text-gray-500 uppercase">Commodity</label>
+                                            <input
+                                                type="text"
+                                                placeholder="General"
+                                                className="input-field py-1 text-sm"
+                                                value={pkg.commodity}
+                                                onChange={(e) => handlePackageChange(index, 'commodity', e.target.value)}
+                                            />
+                                        </div>
+
+                                        {/* Delete Button */}
+                                        {formData.packages.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removePackage(index)}
+                                                className="absolute -top-2 -right-2 bg-red-900/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-sm"
+                                                title="Remove Package"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={addPackage}
+                                className="mt-3 w-full py-2 border-2 border-dashed border-gray-600 text-gray-400 rounded hover:border-primary-500 hover:text-primary-500 hover:bg-secondary-800 transition-colors text-sm font-medium flex justify-center items-center gap-2"
+                            >
+                                <span>➕ Add Another Package</span>
+                            </button>
                         </div>
-                        <div>
-                            <label className="label">Weight (kg)</label>
-                            <input type="number" name="weight" className="input-field" placeholder="100" value={formData.weight} onChange={handleChange} step="0.01" />
-                        </div>
-                        <div>
-                            <label className="label">Dimension (cm)</label>
-                            <input type="text" name="dimension" className="input-field" placeholder="50x40x30" value={formData.dimension} onChange={handleChange} />
-                        </div>
-                        <div>
-                            <label className="label">Service Type</label>
-                            <select name="service_type" className="input-field" value={formData.service_type} onChange={handleChange}>
-                                <option>Air Freight</option>
-                                <option>Sea Freight</option>
-                                <option>Express</option>
-                                <option>Trucking</option>
-                                <option>Warehouse</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="label">Shipment Date</label>
-                            <input type="date" name="shipment_date" className="input-field" value={formData.shipment_date} onChange={handleChange} />
-                        </div>
-                        <div>
+
+                        <div className="mt-4">
                             <label className="label">AWB Number</label>
                             <div className="flex gap-2 items-center">
                                 <input type="text" name="awb_number" className="input-field flex-1" placeholder="ATR-2026-001-AD" value={formData.awb_number} onChange={handleChange} readOnly />
