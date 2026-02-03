@@ -49,8 +49,9 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
             <div className="card max-w-md w-full p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-primary-700">ATR Express</h1>
-                    <p className="text-gray-600 mt-2">Sales CRM {isSignUp ? 'Sign Up' : 'Login'}</p>
+                    <img src="/icon-192.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 rounded-xl shadow-lg" />
+                    <h1 className="text-3xl font-bold text-primary-700">ATREX FORCE</h1>
+                    <p className="text-gray-600 mt-2">Logistics Accelerated {isSignUp ? 'Sign Up' : 'Login'}</p>
                 </div>
 
                 {error && (
@@ -131,7 +132,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-center text-sm text-gray-500 mt-4">
-                    ATR Express Sales Team Only
+                    ATREX FORCE Team Only
                 </p>
             </div>
         </div>

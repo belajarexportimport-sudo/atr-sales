@@ -24,11 +24,9 @@ export default function Navigation({ currentPage, onNavigate }) {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-900/50">
-                                <span className="text-secondary-900 font-bold text-xs tracking-tighter">ATR</span>
-                            </div>
-                            <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATR Express</span>
-                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v3.8 MODAL FIX</span>
+                            <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-primary-900/50" />
+                            <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATREX FORCE</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v4.0</span>
                         </div>
                     </div>
 
