@@ -128,10 +128,6 @@ export default function TrackingPage() {
                                                     <span className="font-bold text-gray-900">{event.status}</span>
                                                     <time className="font-mono text-xs text-gray-500 text-right">
                                                         {formatDate(event.occurred_at)}
-                                                        {/* RAW DATE DEBUG: Helpful to see what's actually stored */}
-                                                        <div className="text-[9px] text-red-400 opacity-70 font-mono mt-0.5">
-                                                            Raw: {String(event.occurred_at)}
-                                                        </div>
                                                     </time>
                                                 </div>
                                                 <div className="text-sm text-gray-600">
