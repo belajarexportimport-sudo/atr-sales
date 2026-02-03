@@ -1,6 +1,6 @@
 {
-  "name": "ATR Express Sales CRM",
-  "short_name": "ATR CRM",
+  "name": "ATREX FORCE",
+  "short_name": "ATREX FORCE",
   "description": "Sales CRM PWA for ATR Express field sales team",
   "start_url": "https://atr-sales.vercel.app/",
   "display": "standalone",

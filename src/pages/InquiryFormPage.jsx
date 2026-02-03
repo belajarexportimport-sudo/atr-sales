@@ -34,7 +34,38 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
         shipment_date: '',
         awb_number: '',
         awb_request_id: null,
+        packages: [{ weight: '', dimension: '', type: 'Box', commodity: '' }] // MULTI-COLLIE
     });
+
+    // Helper: Add Package
+    const addPackage = () => {
+        setFormData(prev => ({
+            ...prev,
+            packages: [...prev.packages, { weight: '', dimension: '', type: 'Box', commodity: '' }]
+        }));
+    };
+
+    // Helper: Remove Package
+    const removePackage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            packages: prev.packages.filter((_, i) => i !== index)
+        }));
+    };
+
+    // Helper: Handle Package Change
+    const handlePackageChange = (index, field, value) => {
+        setFormData(prev => {
+            const newPackages = [...prev.packages];
+            newPackages[index] = { ...newPackages[index], [field]: value };
+            return { ...prev, packages: newPackages };
+        });
+    };
+
+    // Helper: Calculate Total Weight
+    const calculateTotalWeight = () => {
+        return formData.packages.reduce((sum, pkg) => sum + (parseFloat(pkg.weight) || 0), 0);
+    };
 
     // Pre-fill Logic
     useEffect(() => {
@@ -58,6 +89,16 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 ? (inquiry.commission_amount || inquiry.est_commission || 0)
                 : (inquiry.est_commission || 0);
 
+            // Backwards compatibility: if inquiry.packages is missing, use weight/dim from root cols
+            const existingPackages = inquiry.packages && inquiry.packages.length > 0
+                ? inquiry.packages
+                : [{
+                    weight: inquiry.weight || '',
+                    dimension: inquiry.dimension || '',
+                    type: inquiry.package_type || 'Box',
+                    commodity: inquiry.commodity || ''
+                }];
+
             setFormData({
                 customer_name: inquiry.customer_name || '',
                 pic: inquiry.pic || '',
@@ -66,6 +107,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 email: inquiry.email || '',
                 origin: inquiry.origin || '',
                 destination: inquiry.destination || '',
+                // Legacy fields (kept for API compatibility but UI uses packages)
                 weight: inquiry.weight || '',
                 dimension: inquiry.dimension || '',
                 service_type: inquiry.service_type || 'Air Freight',
@@ -77,6 +119,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
                 awb_request_id: inquiry.awb_request_id || null,
+                packages: existingPackages
             });
         }
     }, [lead, inquiry]);
@@ -162,8 +205,10 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 email: formData.email || null,
                 origin: formData.origin,
                 destination: formData.destination,
-                weight: formData.weight ? parseFloat(formData.weight) : null,
-                dimension: formData.dimension || null,
+                // Automatically sum weight from packages for root column
+                weight: calculateTotalWeight(),
+                // Use first package dim as primary specific or join them
+                dimension: formData.packages.map(p => p.dimension).join('; '),
                 service_type: formData.service_type || null,
                 est_revenue: formData.est_revenue ? parseFloat(formData.est_revenue) : null,
                 est_gp: formData.est_gp ? parseFloat(formData.est_gp) : null,
@@ -171,6 +216,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 status: formData.status,
                 shipment_date: formData.shipment_date || null,
                 awb_number: formData.awb_number || null,
+                packages: formData.packages // Save full structure to JSONB
             };
 
             if (inquiry?.id) {

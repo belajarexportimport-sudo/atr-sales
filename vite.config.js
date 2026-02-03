@@ -15,8 +15,8 @@ export default defineConfig({
       },
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'ATR Express Sales CRM',
-        short_name: 'ATR CRM',
+        name: 'ATREX FORCE',
+        short_name: 'ATREX FORCE',
         description: 'Sales CRM PWA for ATR Express field sales team',
         theme_color: '#111827',
         background_color: '#111827',

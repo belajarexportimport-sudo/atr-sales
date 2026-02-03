@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.atr_sales.twa",
+        "sha256_cert_fingerprints": ["D7:9E:FC:22:DF:BB:57:10:3C:2E:C2:3F:2B:56:8D:15:89:63:31:F0:FF:5C:32:A9:1A:9D:8B:5C:45:9E:4B:F6"]
+      }
+    }]
