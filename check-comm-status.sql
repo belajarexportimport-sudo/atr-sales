@@ -1,0 +1,2 @@
+-- CHECK COMMISSION STATUSES
+SELECT DISTINCT commission_status FROM inquiries;

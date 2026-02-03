@@ -26,14 +26,52 @@ export function maskCustomerName(name) {
     return name.substring(0, 3) + '*'.repeat(name.length - 3)
 }
 
-// Format date to readable format
+// Format date to readable format with robust parsing
 export function formatDate(date) {
-    if (!date) return '-'
-    return new Date(date).toLocaleDateString('id-ID', {
+    if (!date) return '-';
+
+    // 1. Force convert to string to be safe
+    let dateStr = String(date);
+
+    // 2. Optimization: If strict Supabase timestamp (YYYY-MM-DD HH:MM:SS+ZZ), replace space with T for strict ISO compliance
+    // Safari and some browsers fail on "2026-01-01 12:00:00+00" without the 'T'
+    if (dateStr.length > 10 && dateStr.charAt(10) === ' ' && dateStr.includes('+')) {
+        dateStr = dateStr.replace(' ', 'T');
+    }
+
+    // 3. Try parsing
+    let d = new Date(dateStr);
+
+    // 4. If invalid, try the "Time" fallback (just in case there's legacy Dirty Data text)
+    if (isNaN(d.getTime())) {
+        // Handle "1/21/2026 Time 09:01 am" format manually
+        if (dateStr.includes('Time')) {
+            const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*Time\s*(\d{1,2}):(\d{2})\s*(am|pm)/i);
+            if (match) {
+                let [_, month, day, year, hour, minute, ampm] = match;
+                hour = parseInt(hour, 10);
+                if (ampm.toLowerCase() === 'pm' && hour < 12) hour += 12;
+                if (ampm.toLowerCase() === 'am' && hour === 12) hour = 0;
+                d = new Date(year, month - 1, day, hour, minute);
+            }
+        }
+    }
+
+    // 5. Final check
+    if (isNaN(d.getTime())) {
+        // Try fallback: cleaning unknown characters
+        const cleanDate = new Date(dateStr.replace(/Time/i, '').trim());
+        if (!isNaN(cleanDate.getTime())) d = cleanDate;
+        else return '-';
+    }
+
+    return d.toLocaleDateString('id-ID', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-    })
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // Get Tailwind color class for status badge
@@ -51,7 +89,6 @@ export function getStatusColor(status) {
     return colors[status] || 'bg-gray-800 text-gray-300 border border-gray-700'
 }
 
-// Get Tailwind color class for lead status badge
 export function getLeadStatusColor(status) {
     const colors = {
         'Cold': 'bg-blue-900/50 text-blue-200 border border-blue-800',
