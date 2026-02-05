@@ -63,6 +63,12 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
 
             setInquiries(inqData);
 
+            // Fetch Shark Tank (Open) Leads if Sales
+            let sharkTankLeads = [];
+            if (profile?.role !== 'admin') {
+                sharkTankLeads = await inquiryService.getOpenInquiries();
+            }
+
             // Calculate initial stats
             calculateStats(inqData, leadCount, 'all');
 
@@ -78,7 +84,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                 pComms = dComms;
                 pReqs = dReqs;
             }
-            generateTodoList(inqData, pUsers, pComms, pReqs);
+            generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -184,15 +190,53 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         });
     };
 
-    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = []) => {
+    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = [], sharkTankLeads = []) => {
         const tasks = [];
+
+        // --- ADMIN ALERTS ---
         if (profile?.role === 'admin') {
             if (pendingUsers.length > 0) tasks.push({ id: 'users', type: 'admin', title: `👥 ${pendingUsers.length} User Approval`, desc: 'New users', priority: 'high' });
             if (pendingCommissions.length > 0) tasks.push({ id: 'commissions', type: 'admin', title: `💰 ${pendingCommissions.length} Commission Approval`, desc: 'Review commissions', priority: 'high' });
             if (pendingRequests.length > 0) tasks.push({ id: 'awb', type: 'admin', title: `📦 ${pendingRequests.length} AWB Request`, desc: 'Sales requests', priority: 'medium' });
+
+            // New Leads Today
+            const today = new Date().toISOString().slice(0, 10);
+            const newLeads = data.filter(d => d.created_at?.startsWith(today)).length;
+            if (newLeads > 0) tasks.push({ id: 'new_leads', type: 'info', title: `📝 ${newLeads} New Inquiries Today`, desc: 'Sales activity', priority: 'low' });
         }
+
+        // --- SALES ALERTS ---
+        else {
+            // 1. Shark Tank Alert
+            if (sharkTankLeads.length > 0) {
+                tasks.push({
+                    id: 'shark',
+                    type: 'alert',
+                    title: `🦈 ${sharkTankLeads.length} NEW OPEN LEADS!`,
+                    desc: 'Grabs these unassigned leads now!',
+                    priority: 'high'
+                });
+            }
+
+            // 2. Recent Approvals (Simulated "Unread" by checking recent status changes - simplified to just showing approved ones pending payment or recent)
+            // Show "Commission Approved" if approved but not paid
+            const approvedComm = data.filter(d => (d.commission_status === 'Approved' || d.commission_approved) && d.commission_status !== 'Paid');
+            if (approvedComm.length > 0) {
+                tasks.push({ id: 'comm_approved', type: 'success', title: `💰 ${approvedComm.length} Commission Approved`, desc: 'Ready for payment', priority: 'medium' });
+            }
+
+            // Show "AWB Assigned" for recent ones (checking if awb exists and status is NOT delivered/paid to avoid clutter? or just verify date?)
+            // Let's just show logic: "Pipeline with AWB" that are still 'Proposal' (meaning just got AWB)?
+            const justGotAWB = data.filter(d => d.awb_number && d.status === 'Proposal');
+            if (justGotAWB.length > 0) {
+                tasks.push({ id: 'awb_ready', type: 'success', title: `📦 ${justGotAWB.length} AWB Ready`, desc: 'Share with customer', priority: 'medium' });
+            }
+        }
+
+        // Standard Follow Ups
         const followUps = data.filter(inq => (inq.status === 'Profiling' || inq.status === 'Proposal') && (inq.user_id === user?.id));
         if (followUps.length > 0) tasks.push({ id: 'followup', type: 'sales', title: `📞 ${followUps.length} Follow Ups`, desc: 'Active deals', priority: 'medium' });
+
         setTodoList(tasks);
     };
 
