@@ -15,7 +15,7 @@ export const userService = {
     async getAllSalesReps() {
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, email');
+            .select('id, full_name, email, sales_code');
 
         handleError(error, 'getAllSalesReps');
         return data || [];

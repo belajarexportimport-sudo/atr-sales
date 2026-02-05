@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
 
                 return {
                     id: rep.id,
-                    name: rep.full_name || rep.email?.split('@')[0],
+                    name: rep.sales_code || rep.full_name || rep.email?.split('@')[0],
                     avatar: rep.avatar_url || `https://ui-avatars.com/api/?name=${rep.full_name || 'User'}&background=random`,
                     gmv,
                     gp,
