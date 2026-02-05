@@ -3,8 +3,11 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, formatCurrency } from '../lib/utils';
 
+import { useToast } from '../contexts/ToastContext';
+
 export default function OperationsPage() {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [formData, setFormData] = useState({
         awb_number: '',
         status: 'In Transit',
@@ -126,11 +129,13 @@ export default function OperationsPage() {
 
             if (error) throw error;
 
-            alert(`✅ AWB Generated: ${awbNumber}`);
+            if (error) throw error;
+
+            showToast(`✅ AWB Generated: ${awbNumber}`, 'success');
             fetchPendingRequests(); // Refresh list
         } catch (error) {
             console.error('Error approving AWB:', error);
-            alert(`❌ Failed to approve AWB: ${error.message}`);
+            showToast(`❌ Failed to approve AWB: ${error.message}`, 'error');
         } finally {
             setLoading(false);
         }
@@ -172,7 +177,9 @@ export default function OperationsPage() {
 
             if (error) throw error;
 
-            alert(`✅ User ${email} approved with initials ${initials}!`);
+            if (error) throw error;
+
+            showToast(`✅ User ${email} approved with initials ${initials}!`, 'success');
             fetchPendingUsers(); // Refresh list
             setUserInitials(prev => {
                 const updated = { ...prev };
@@ -181,7 +188,7 @@ export default function OperationsPage() {
             });
         } catch (error) {
             console.error('Error approving user:', error);
-            alert(`❌ Failed to approve user: ${error.message}`);
+            showToast(`❌ Failed to approve user: ${error.message}`, 'error');
         } finally {
             setLoading(false);
         }
@@ -199,11 +206,13 @@ export default function OperationsPage() {
 
             if (error) throw error;
 
-            alert(`✅ User ${email} rejected and deleted.`);
+            if (error) throw error;
+
+            showToast(`✅ User ${email} rejected and deleted.`, 'info');
             fetchPendingUsers(); // Refresh list
         } catch (error) {
             console.error('Error rejecting user:', error);
-            alert(`❌ Failed to reject user: ${error.message}`);
+            showToast(`❌ Failed to reject user: ${error.message}`, 'error');
         } finally {
             setLoading(false);
         }
@@ -249,11 +258,13 @@ export default function OperationsPage() {
 
             if (error) throw error;
 
-            alert('✅ Commission Approved!');
+            if (error) throw error;
+
+            showToast('✅ Commission Approved!', 'success');
             fetchPendingCommissions(); // Refresh list
         } catch (error) {
             console.error('Error approving commission:', error);
-            alert(`❌ Failed to approve: ${error.message}`);
+            showToast(`❌ Failed to approve: ${error.message}`, 'error');
         } finally {
             setLoading(false);
         }

@@ -1,8 +1,24 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 
 export default function UpdatePasswordPage() {
+    const { showToast } = useToast();
     const [password, setPassword] = useState('');
+    // ...
+
+    // In handleSubmit:
+    try {
+        // ... (session check)
+        const { error } = await supabase.auth.updateUser({ password: password });
+        if (error) throw error;
+
+        showToast('Password updated successfully! Please login.', 'success');
+        window.location.href = '/';
+    } catch (err) {
+        // ...
+        const msg = err.message || 'Failed to update password.';
+        setError(msg);
+        showToast(msg, 'error');
+    }
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -29,14 +45,14 @@ export default function UpdatePasswordPage() {
             if (error) throw error;
 
             // Show alert then redirect
-            alert('Password updated successfully! Please login with your new password.');
+            showToast('Password updated successfully! Please login with your new password.', 'success');
             window.location.href = '/';
         } catch (err) {
             console.error(err);
             // Display detailed error to user
             const msg = err.message || 'Failed to update password.';
             setError(msg);
-            alert(`Error: ${msg}`);
+            showToast(`Error: ${msg}`, 'error');
         } finally {
             setLoading(false);
         }

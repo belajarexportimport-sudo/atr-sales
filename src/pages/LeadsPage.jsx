@@ -4,8 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatDate, getLeadStatusColor } from '../lib/utils';
 import LeadFormModal from '../components/LeadFormModal';
 
+import { useToast } from '../contexts/ToastContext';
+
 export default function LeadsPage({ onCreateRFQ }) {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -64,7 +67,7 @@ export default function LeadsPage({ onCreateRFQ }) {
             fetchLeads();
         } catch (error) {
             console.error('Error deleting lead:', error);
-            alert('Failed to delete lead');
+            showToast('Failed to delete lead', 'error');
         }
     };
 

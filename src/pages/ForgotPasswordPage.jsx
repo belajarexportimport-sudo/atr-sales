@@ -1,8 +1,23 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 
 export default function ForgotPasswordPage() {
+    const { showToast } = useToast();
     const [email, setEmail] = useState('');
+    // ...
+
+    // In handleSubmit:
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/update-password',
+        });
+        if (error) throw error;
+
+        showToast('Password reset link sent! Check your email.', 'success');
+        // Optional: redirect to login or stay
+    } catch (err) {
+        setError(err.message);
+        showToast(err.message, 'error');
+    }
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
