@@ -215,7 +215,6 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 est_revenue: formData.est_revenue ? parseFloat(formData.est_revenue) : null,
                 est_gp: formData.est_gp ? parseFloat(formData.est_gp) : null,
                 est_commission: formData.est_commission,
-                est_commission: formData.est_commission,
                 // OPEN MARKET LOGIC: If Open Market, Status is UNASSIGNED
                 status: (profile?.role === 'admin' && isOpenMarket) ? 'UNASSIGNED' : formData.status,
                 shipment_date: formData.shipment_date || null,

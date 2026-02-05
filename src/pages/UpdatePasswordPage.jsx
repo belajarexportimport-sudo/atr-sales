@@ -5,20 +5,7 @@ export default function UpdatePasswordPage() {
     const [password, setPassword] = useState('');
     // ...
 
-    // In handleSubmit:
-    try {
-        // ... (session check)
-        const { error } = await supabase.auth.updateUser({ password: password });
-        if (error) throw error;
-
-        showToast('Password updated successfully! Please login.', 'success');
-        window.location.href = '/';
-    } catch (err) {
-        // ...
-        const msg = err.message || 'Failed to update password.';
-        setError(msg);
-        showToast(msg, 'error');
-    }
+    // State declarations moved up
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
