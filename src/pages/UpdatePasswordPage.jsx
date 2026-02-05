@@ -18,17 +18,25 @@ export default function UpdatePasswordPage() {
         setError('');
 
         try {
+            // Check if session exists first
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error("No active session found. Please login again or use the reset link.");
+            }
+
             const { error } = await supabase.auth.updateUser({ password: password });
 
             if (error) throw error;
 
-            console.log('Password updated successfully');
             // Show alert then redirect
             alert('Password updated successfully! Please login with your new password.');
             window.location.href = '/';
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Failed to update password.');
+            // Display detailed error to user
+            const msg = err.message || 'Failed to update password.';
+            setError(msg);
+            alert(`Error: ${msg}`);
         } finally {
             setLoading(false);
         }
@@ -57,7 +65,7 @@ export default function UpdatePasswordPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
                             placeholder="••••••••"
                             disabled={loading}
                         />
@@ -70,7 +78,7 @@ export default function UpdatePasswordPage() {
                             required
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
                             placeholder="••••••••"
                             disabled={loading}
                         />
