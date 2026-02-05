@@ -36,6 +36,7 @@ export default function ForgotPasswordPage() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
                 <div className="text-center mb-6">
+                    <img src="/icon-192.png" alt="ATR Logo" className="w-16 h-16 mx-auto mb-4 rounded-xl shadow-lg shadow-primary-900/20" />
                     <h2 className="text-2xl font-bold text-gray-900">Forgot Password</h2>
                     <p className="text-gray-600 mt-2">Enter your email to receive a reset link.</p>
                 </div>
