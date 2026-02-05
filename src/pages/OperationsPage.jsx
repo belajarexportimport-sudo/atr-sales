@@ -324,16 +324,24 @@ export default function OperationsPage({ onViewInquiry }) {
     };
 
     // Approve Quote
-    const handleApproveQuote = (inquiryId, customerName) => {
-        showConfirm('Approve Quote?', `Approve quotation for ${customerName}?`, async () => {
+    const handleApproveQuote = (inquiryId, customerName, revenue, gp) => {
+        // Validate
+        if (!revenue || revenue <= 0) {
+            showToast('⚠️ Please enter valid Revenue before approving', 'error');
+            return;
+        }
+
+        showConfirm('Approve Quote?', `Approve ${formatCurrency(revenue)} for ${customerName}?`, async () => {
             try {
                 setLoading(true);
                 const { error } = await supabase.rpc('approve_quote', {
                     p_inquiry_id: inquiryId,
-                    p_approved_by: user.id
+                    p_approved_by: user.id,
+                    p_revenue: parseFloat(revenue),
+                    p_gp: parseFloat(gp || 0)
                 });
                 if (error) throw error;
-                showToast('✅ Quotation Approved!', 'success');
+                showToast('✅ Quotation Approved & Updated!', 'success');
                 fetchPendingQuotes();
             } catch (error) {
                 console.error('Error approving quote:', error);
@@ -582,8 +590,36 @@ export default function OperationsPage({ onViewInquiry }) {
                                         <td className="px-4 py-3 text-sm text-gray-400">{formatDate(q.created_at)}</td>
                                         <td className="px-4 py-3 text-sm text-gray-200">{q.sales_rep}</td>
                                         <td className="px-4 py-3 text-sm text-gray-200">{q.customer_name}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-200 font-mono">{formatCurrency(q.est_revenue)}</td>
-                                        <td className="px-4 py-3 text-sm text-green-400 font-mono">{formatCurrency(q.est_gp)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            {/* Editable Revenue */}
+                                            <input
+                                                type="number"
+                                                className="w-24 bg-secondary-900 border border-gray-600 rounded px-2 py-1 text-right font-mono text-xs text-white"
+                                                placeholder="Revenue"
+                                                value={q.est_revenue || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setPendingQuotes(prev => prev.map(item =>
+                                                        item.inquiry_id === q.inquiry_id ? { ...item, est_revenue: val } : item
+                                                    ));
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                            {/* Editable GP */}
+                                            <input
+                                                type="number"
+                                                className="w-24 bg-secondary-900 border border-gray-600 rounded px-2 py-1 text-right font-mono text-xs text-green-400"
+                                                placeholder="GP"
+                                                value={q.est_gp || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setPendingQuotes(prev => prev.map(item =>
+                                                        item.inquiry_id === q.inquiry_id ? { ...item, est_gp: val } : item
+                                                    ));
+                                                }}
+                                            />
+                                        </td>
                                         <td className="px-4 py-3 text-xs text-gray-500">{q.origin} → {q.destination}</td>
                                         <td className="px-4 py-3 text-sm flex gap-2">
                                             <button
@@ -594,9 +630,9 @@ export default function OperationsPage({ onViewInquiry }) {
                                                 🔍
                                             </button>
                                             <button
-                                                onClick={() => handleApproveQuote(q.inquiry_id, q.customer_name)}
+                                                onClick={() => handleApproveQuote(q.inquiry_id, q.customer_name, q.est_revenue, q.est_gp)}
                                                 disabled={loading}
-                                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs shadow-lg shadow-green-900/50"
                                             >
                                                 ✓ Approve
                                             </button>
