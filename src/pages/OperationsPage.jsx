@@ -153,6 +153,27 @@ export default function OperationsPage({ onViewInquiry }) {
                 if (error) throw error;
                 showToast(`✅ AWB Generated: ${awbNumber}`, 'success');
                 fetchPendingRequests();
+
+                // --- SYNC TO GOOGLE SHEET (AUTO) ---
+                try {
+                    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGWqAOKQTuBnFtCjEq5CczzqcjS1mKjuM26VqYA0c8ioaZFmtj4JgwpfTZ3s3tNHoX/exec';
+                    const gasPayload = new URLSearchParams({
+                        action: 'update',
+                        awb: awbNumber,
+                        status: 'Picked Up', // Initial Status
+                        location: 'Jakarta Gateway', // Initial Location
+                        description: 'Shipment created and AWB generated',
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // Fire and forget
+                    fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: gasPayload.toString()
+                    }).catch(console.error);
+                } catch (e) { console.warn(e); }
+
             } catch (error) {
                 console.error('Error approving AWB:', error);
                 showToast(`❌ Failed: ${error.message}`, 'error');

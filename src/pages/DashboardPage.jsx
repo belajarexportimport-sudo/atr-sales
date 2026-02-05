@@ -85,8 +85,12 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                 pReqs = dReqs;
             }
             // Calculate Pending Quotes from inqData (no need for extra fetch)
+            // Includes explicitly pending OR missing revenue (need pricing)
             const pendingQuotes = profile?.role === 'admin'
-                ? inqData.filter(d => d.quote_status === 'Pending Approval')
+                ? inqData.filter(d =>
+                    d.quote_status === 'Pending Approval' ||
+                    ((!d.est_revenue || parseFloat(d.est_revenue) === 0) && !['Lost', 'Cancelled', 'Won', 'Invoiced', 'Paid'].includes(d.status))
+                )
                 : [];
 
             generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads, pendingQuotes);
