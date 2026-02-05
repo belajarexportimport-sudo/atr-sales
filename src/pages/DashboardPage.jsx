@@ -84,7 +84,12 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                 pComms = dComms;
                 pReqs = dReqs;
             }
-            generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads);
+            // Calculate Pending Quotes from inqData (no need for extra fetch)
+            const pendingQuotes = profile?.role === 'admin'
+                ? inqData.filter(d => d.quote_status === 'Pending Approval')
+                : [];
+
+            generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads, pendingQuotes);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -190,7 +195,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         });
     };
 
-    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = [], sharkTankLeads = []) => {
+    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = [], sharkTankLeads = [], pendingQuotes = []) => {
         const tasks = [];
 
         // --- ADMIN ALERTS ---
@@ -198,6 +203,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
             if (pendingUsers.length > 0) tasks.push({ id: 'users', type: 'admin', title: `👥 ${pendingUsers.length} User Approval`, desc: 'New users', priority: 'high' });
             if (pendingCommissions.length > 0) tasks.push({ id: 'commissions', type: 'admin', title: `💰 ${pendingCommissions.length} Commission Approval`, desc: 'Review commissions', priority: 'high' });
             if (pendingRequests.length > 0) tasks.push({ id: 'awb', type: 'admin', title: `📦 ${pendingRequests.length} AWB Request`, desc: 'Sales requests', priority: 'medium' });
+            if (pendingQuotes.length > 0) tasks.push({ id: 'quotes', type: 'admin', title: `📄 ${pendingQuotes.length} Quotation Approval`, desc: 'Review prices', priority: 'medium' });
 
             // New Leads Today
             const today = new Date().toISOString().slice(0, 10);
@@ -218,15 +224,20 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                 });
             }
 
-            // 2. Recent Approvals (Simulated "Unread" by checking recent status changes - simplified to just showing approved ones pending payment or recent)
+            // 2. Quotation Approved (NEW)
+            const approvedQuotes = data.filter(d => d.quote_status === 'Approved' && d.status === 'Proposal');
+            if (approvedQuotes.length > 0) {
+                tasks.push({ id: 'quote_ok', type: 'success', title: `✅ ${approvedQuotes.length} Quotation APPROVED`, desc: 'Print & Send to Customer', priority: 'high' });
+            }
+
+            // 3. Recent Approvals
             // Show "Commission Approved" if approved but not paid
             const approvedComm = data.filter(d => (d.commission_status === 'Approved' || d.commission_approved) && d.commission_status !== 'Paid');
             if (approvedComm.length > 0) {
                 tasks.push({ id: 'comm_approved', type: 'success', title: `💰 ${approvedComm.length} Commission Approved`, desc: 'Ready for payment', priority: 'medium' });
             }
 
-            // Show "AWB Assigned" for recent ones (checking if awb exists and status is NOT delivered/paid to avoid clutter? or just verify date?)
-            // Let's just show logic: "Pipeline with AWB" that are still 'Proposal' (meaning just got AWB)?
+            // Show "AWB Assigned" for recent ones
             const justGotAWB = data.filter(d => d.awb_number && d.status === 'Proposal');
             if (justGotAWB.length > 0) {
                 tasks.push({ id: 'awb_ready', type: 'success', title: `📦 ${justGotAWB.length} AWB Ready`, desc: 'Share with customer', priority: 'medium' });
