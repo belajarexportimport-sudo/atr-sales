@@ -37,10 +37,24 @@ function AppContent() {
   // Let's modify the initial state of currentPage to check URL path
   useState(() => {
     const path = window.location.pathname;
+    // Check both path and hash for recovery
     if (path === '/forgot-password') return 'forgot-password';
     if (path === '/update-password') return 'update-password';
     return 'dashboard';
   });
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // console.log("AUTH EVENT:", event);
+      if (event === 'PASSWORD_RECOVERY') {
+        setCurrentPage('update-password');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Actually, since I can't easily change the useState initialization in a replace_file_content safely without context of imports,
   // I will check if I can wrap the whole App in BrowserRouter or just hack the current routing.
