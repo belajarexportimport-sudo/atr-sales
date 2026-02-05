@@ -155,24 +155,33 @@ export default function OperationsPage({ onViewInquiry }) {
                 fetchPendingRequests();
 
                 // --- SYNC TO GOOGLE SHEET (AUTO) ---
+                // --- SYNC TO GOOGLE SHEET (AUTO) ---
                 try {
+                    showToast('⏳ Syncing to Google Sheet...', 'info'); // UI Feedback
                     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGWqAOKQTuBnFtCjEq5CczzqcjS1mKjuM26VqYA0c8ioaZFmtj4JgwpfTZ3s3tNHoX/exec';
                     const gasPayload = new URLSearchParams({
                         action: 'update',
                         awb: awbNumber,
-                        status: 'Picked Up', // Initial Status
-                        location: 'Jakarta Gateway', // Initial Location
+                        status: 'Picked Up',
+                        location: 'Jakarta Gateway',
                         description: 'Shipment created and AWB generated',
                         timestamp: new Date().toISOString()
                     });
 
-                    // Fire and forget
-                    fetch(GAS_URL, {
+                    // Use no-cors to bypass CORS restrictions (Opaque response)
+                    await fetch(GAS_URL, {
                         method: 'POST',
+                        mode: 'no-cors', // Critical for client-side GAS calls
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: gasPayload.toString()
-                    }).catch(console.error);
-                } catch (e) { console.warn(e); }
+                    });
+
+                    showToast('✅ Synced to GSheet!', 'success');
+
+                } catch (e) {
+                    console.error('GSheet Auto-Sync Error:', e);
+                    showToast('⚠️ GSheet Sync skipped (Network)', 'error');
+                }
 
             } catch (error) {
                 console.error('Error approving AWB:', error);
