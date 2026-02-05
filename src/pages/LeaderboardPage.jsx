@@ -84,13 +84,13 @@ export default function LeaderboardPage() {
 
             {/* Filters */}
             <div className="flex justify-center gap-2 mb-8 bg-gray-100 p-1 rounded-full w-fit mx-auto">
-                {['gmv', 'gp', 'deals'].map(f => (
+                {['gmv', 'deals'].map(f => (
                     <button
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase transition-all ${filter === f ? 'bg-primary-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
                     >
-                        {f === 'gmv' ? 'Revenue' : f === 'gp' ? 'Profit' : 'Deals'}
+                        {f === 'gmv' ? 'Revenue' : 'Deals'}
                     </button>
                 ))}
             </div>
