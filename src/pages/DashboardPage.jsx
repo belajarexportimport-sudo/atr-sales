@@ -247,7 +247,11 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                             className="bg-secondary-900 text-gray-200 text-sm rounded border border-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 p-1"
                         >
                             <option value="all">⭐ All Sales Team</option>
-                            {salesReps.map(rep => (<option key={rep.id} value={rep.id}>👤 {rep.full_name || rep.email}</option>))}
+                            {salesReps.map(rep => (
+                                <option key={rep.id} value={rep.id}>
+                                    {rep.sales_code ? `[${rep.sales_code}] ` : ''}{rep.full_name || 'Unknown'} ({rep.email})
+                                </option>
+                            ))}
                         </select>
                     </div>
                 )}
