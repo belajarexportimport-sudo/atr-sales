@@ -6,8 +6,8 @@ const ToastContext = createContext();
 export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
 
-    const showToast = (message, type = 'info') => {
-        setToast({ message, type });
+    const showToast = (message, type = 'info', details = null) => {
+        setToast({ message, type, details });
     };
 
     const closeToast = () => {
@@ -22,6 +22,7 @@ export function ToastProvider({ children }) {
                     message={toast.message}
                     type={toast.type}
                     onClose={closeToast}
+                    details={toast.details}
                 />
             )}
         </ToastContext.Provider>

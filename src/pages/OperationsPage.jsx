@@ -120,6 +120,7 @@ export default function OperationsPage({ onViewInquiry }) {
         } catch (error) {
             console.error('Error updating tracking:', error);
             setMessage({ type: 'error', text: 'Failed to update tracking. Check permissions.' });
+            showToast('❌ Failed to update tracking', 'error', error.message || error);
         } finally {
             setLoading(false);
         }

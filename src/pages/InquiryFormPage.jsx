@@ -233,7 +233,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
         } catch (err) {
             console.error('Error saving inquiry:', err);
             setError(err.message || 'Failed to save inquiry');
-            showToast('❌ Failed to save inquiry', 'error');
+            showToast('❌ Failed to save inquiry', 'error', err.message || err);
         } finally {
             setLoading(false);
         }
