@@ -15,6 +15,7 @@ export default function Navigation({ currentPage, onNavigate }) {
         { id: 'leads', label: 'Leads', icon: '👥' },
         { id: 'new-inquiry', label: 'New RFQ', icon: '📝' },
         { id: 'tracking', label: 'Tracking', icon: '📦' },
+        { id: 'settings', label: 'Settings', icon: '⚙️' },
         { id: 'debug', label: 'Diagnose', icon: '🛠️' },
         // Only show Ops for Admin
         ...(profile?.role === 'admin' ? [{ id: 'ops', label: 'Ops', icon: '🔧' }] : []),

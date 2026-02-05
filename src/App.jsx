@@ -15,6 +15,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UpdatePasswordPage from './pages/UpdatePasswordPage'
 import QuotationPage from './pages/QuotationPage'
 import LeaderboardPage from './pages/LeaderboardPage'
+import SettingsPage from './pages/SettingsPage'
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -206,6 +207,8 @@ function AppContent() {
         return <LeaderboardPage />;
       case 'marketplace':
         return <MarketplacePage />;
+      case 'settings':
+        return <SettingsPage />;
       case 'ops':
         // Protected Route
         if (profile?.role !== 'admin') {
