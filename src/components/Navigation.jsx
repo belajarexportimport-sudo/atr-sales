@@ -10,6 +10,7 @@ export default function Navigation({ currentPage, onNavigate }) {
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'marketplace', label: 'Shark Tank', icon: '🦈' },
         { id: 'leads', label: 'Leads', icon: '👥' },
         { id: 'new-inquiry', label: 'New RFQ', icon: '📝' },
         { id: 'tracking', label: 'Tracking', icon: '📦' },
@@ -26,7 +27,7 @@ export default function Navigation({ currentPage, onNavigate }) {
                         <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('dashboard')}>
                             <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-primary-900/50" />
                             <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATREX FORCE</span>
-                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v4.0</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v4.1</span>
                         </div>
                     </div>
 
@@ -35,6 +36,15 @@ export default function Navigation({ currentPage, onNavigate }) {
                             <span className="text-sm font-medium text-gray-300">{profile?.full_name}</span>
                             <span className="text-xs px-2 py-1 rounded bg-secondary-700 text-primary-400 font-mono border border-gray-700">{profile?.role}</span>
                         </div>
+                        <button
+                            onClick={() => onNavigate('update-password')}
+                            className="text-gray-400 hover:text-primary-400 transition-colors p-2 rounded-lg hover:bg-secondary-700"
+                            title="Change Password"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="text-gray-400 hover:text-primary-400 transition-colors p-2 rounded-lg hover:bg-secondary-700"

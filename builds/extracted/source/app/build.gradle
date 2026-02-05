@@ -24,8 +24,8 @@ def twaManifest = [
     applicationId: 'app.vercel.atr_sales.twa',
     hostName: 'atr-sales.vercel.app', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
-    name: 'ATR CRM', // The application name.
-    launcherName: 'ATR CRM', // The name shown on the Android Launcher.
+    name: 'ATREX FORCE', // The application name.
+    launcherName: 'ATREX FORCE', // The name shown on the Android Launcher.
     themeColor: '#111827', // The color used for the status bar.
     themeColorDark: '#111827', // The color used for the dark status bar.
     navigationColor: '#111827', // The color used for the navigation bar.

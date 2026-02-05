@@ -7,7 +7,7 @@ import { inquiryService } from '../services/inquiryService';
 import { commissionService } from '../services/commissionService';
 import { leadService } from '../services/leadService';
 
-export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
+export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
     const { showConfirm } = useModal(); // Hook
@@ -15,6 +15,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
     const [error, setError] = useState('');
     const [leadId, setLeadId] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [isOpenMarket, setIsOpenMarket] = useState(false); // NEW: Admin Inject
     const [formData, setFormData] = useState({
         customer_name: '',
         pic: '',
@@ -197,7 +198,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
 
             const inquiryData = {
                 lead_id: finalLeadId,
-                user_id: user.id,
+                // OPEN MARKET LOGIC: If Admin checks 'isOpenMarket', user_id is NULL
+                user_id: (profile?.role === 'admin' && isOpenMarket) ? null : user.id,
                 customer_name: formData.customer_name,
                 pic: formData.pic || null,
                 industry: formData.industry || null,
@@ -213,7 +215,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 est_revenue: formData.est_revenue ? parseFloat(formData.est_revenue) : null,
                 est_gp: formData.est_gp ? parseFloat(formData.est_gp) : null,
                 est_commission: formData.est_commission,
-                status: formData.status,
+                est_commission: formData.est_commission,
+                // OPEN MARKET LOGIC: If Open Market, Status is UNASSIGNED
+                status: (profile?.role === 'admin' && isOpenMarket) ? 'UNASSIGNED' : formData.status,
                 shipment_date: formData.shipment_date || null,
                 awb_number: formData.awb_number || null,
                 packages: formData.packages // Save full structure to JSONB
@@ -246,6 +250,21 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
             {error && (
                 <div className="bg-red-900/40 border border-red-800 text-red-200 px-4 py-3 rounded-lg mb-4">
                     {error}
+                </div>
+            )}
+
+            {/* ADMIN ONLY: Inject to Open Market Toggle */}
+            {profile?.role === 'admin' && !leadId && !isEditMode && (
+                <div className="bg-indigo-900/30 border border-indigo-700/50 p-4 rounded-lg mb-6 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-indigo-200 font-bold flex items-center gap-2">🦈 Shark Tank Inject</h3>
+                        <p className="text-xs text-indigo-300/70">Post this RFQ to the Open Market for any sales to grab.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={isOpenMarket} onChange={(e) => setIsOpenMarket(e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span className="ml-3 text-sm font-medium text-indigo-300 font-bold">{isOpenMarket ? 'YES' : 'NO'}</span>
+                    </label>
                 </div>
             )}
 
@@ -493,6 +512,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess }) {
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button type="submit" className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>{loading ? 'Saving...' : '💾 Save Inquiry'}</button>
+                    {isEditMode && (
+                        <button type="button" className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors" onClick={() => onQuote && onQuote(inquiry)}>🖨️ Print Quote</button>
+                    )}
                     <button type="button" className="btn-secondary" onClick={() => onSuccess && onSuccess()} disabled={loading}>❌ Cancel</button>
                 </div>
             </form>

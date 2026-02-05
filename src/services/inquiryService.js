@@ -128,5 +128,33 @@ export const inquiryService = {
             return [];
         }
         return data || [];
+    },
+
+    /**
+     * Get Open Inquiries (Unassigned)
+     */
+    async getOpenInquiries() {
+        const { data, error } = await supabase
+            .from('inquiries')
+            .select('*')
+            .is('user_id', null)
+            .eq('status', 'UNASSIGNED')
+            .order('created_at', { ascending: false });
+
+        handleError(error, 'getOpenInquiries');
+        return data || [];
+    },
+
+    /**
+     * Grab an existing Lead (RPC)
+     */
+    async grabInquiry(inquiryId, userId) {
+        const { data, error } = await supabase.rpc('grab_lead', {
+            lead_id: inquiryId,
+            grabber_id: userId
+        });
+
+        handleError(error, 'grabInquiry');
+        return data; // returns true/false
     }
 };

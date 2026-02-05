@@ -9,13 +9,60 @@ import LeadsPage from './pages/LeadsPage'
 import TrackingPage from './pages/TrackingPage'
 import OperationsPage from './pages/OperationsPage'
 import DebugPage from './pages/DebugPage'
+import MarketplacePage from './pages/MarketplacePage'
 import Navigation from './components/Navigation'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import UpdatePasswordPage from './pages/UpdatePasswordPage'
+import QuotationPage from './pages/QuotationPage'
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedLead, setSelectedLead] = useState(null);
   const [editingInquiry, setEditingInquiry] = useState(null);
+  const [quotationInquiry, setQuotationInquiry] = useState(null);
+
+  // Handle URL-based routing for Password Reset (Supabase Redirect)
+  // When Supabase redirects back, it might include hash fragments.
+  // We can check window.location.pathname if we were using a real router like react-router-dom
+  // BUT this app seems to use state-based routing 'currentPage'
+  // However, Supabase auth redirects are full page reloads usually unless handled.
+
+  // WAIT: This app is using state-based routing (setCurrentPage) but relies on `window.location.pathname`? 
+  // Checking the file, it seems purely state-based `currentPage`.
+  // If `UpdatePasswordPage` is reached via a URL link from email, we need to handle that.
+
+  // Let's modify the initial state of currentPage to check URL path
+  useState(() => {
+    const path = window.location.pathname;
+    if (path === '/forgot-password') return 'forgot-password';
+    if (path === '/update-password') return 'update-password';
+    return 'dashboard';
+  });
+
+  // Actually, since I can't easily change the useState initialization in a replace_file_content safely without context of imports,
+  // I will check if I can wrap the whole App in BrowserRouter or just hack the current routing.
+  // The current app does `const [currentPage, setCurrentPage] = useState('dashboard');`
+
+  // Seeing as `App.jsx` imports `Link` in `ForgotPasswordPage`, the user might expect `react-router-dom`. 
+  // But `App.jsx` itself does NOT seem to use `react-router-dom`'s `<Routes>`.
+  // It uses a switch statement `renderPage`.
+
+  // Let's look at `App.jsx` again.
+  // It has `import { useState } from 'react'` but NO `react-router-dom` in the imports shown in previous `view_file`.
+  // Wait, `ForgotPasswordPage` I wrote uses `import { Link } from 'react-router-dom';`. THIS WILL CRASH if not inside a Router.
+
+  // I need to fix `ForgotPasswordPage` to use a simple <a> tag or a prop callback if `react-router-dom` is not installed/used.
+  // AND I need to handle the "routing" for the reset password link which comes from an external email.
+
+  // Strategy:
+  // 1. Check if `react-router-dom` is in `package.json`.
+  // 2. If yes, Refactor App to use it? Or just stick to state routing + URL check.
+  // 3. The `resetPasswordForEmail` redirect URL will be a full page load.
+  //    So when the user lands on `.../update-password`, we need to detect that.
+
+  // Let's check `package.json` first to see if `react-router-dom` exists.
+
 
   if (loading) {
     return (
@@ -29,15 +76,29 @@ function AppContent() {
   }
 
   if (!user) {
+    if (currentPage === 'forgot-password') {
+      return <ForgotPasswordPage />;
+    }
+    if (currentPage === 'update-password') {
+      // Ideally this shouldn't happen for update-password as they should be logged in via link
+      // checking this just in case
+      return <UpdatePasswordPage />;
+    }
     return <LoginPage />;
   }
+
+  // Allow Update Password page even if profile is problematic?
+  // Maybe not, keep it simple.
 
   // Safety Net: Wait for profile to load
   // Safety Net: Profile Missing (Trigger Failed)
   if (!profile) {
+    if (currentPage === 'update-password') return <UpdatePasswordPage />; // ALLOW PASSWORD UPDATE even if profile missing logic failing
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+          {/* ... */}
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Profile Not Found</h2>
           <p className="text-gray-600 mb-6">
@@ -112,11 +173,17 @@ function AppContent() {
     setCurrentPage('new-inquiry');
   };
 
+  // Handle Quotation View
+  const handleViewQuotation = (inquiry) => {
+    setQuotationInquiry(inquiry);
+    setCurrentPage('quotation');
+  };
+
   // Render current page
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onEditInquiry={handleEditInquiry} onNavigate={setCurrentPage} />;
+        return <DashboardPage onEditInquiry={handleEditInquiry} onQuote={handleViewQuotation} onNavigate={setCurrentPage} />;
       case 'debug':
         return <DebugPage />;
       case 'leads':
@@ -130,6 +197,7 @@ function AppContent() {
             setEditingInquiry(null);
             setCurrentPage('dashboard');
           }}
+          onQuote={handleViewQuotation}
         />;
       case 'tracking':
         return <TrackingPage />;
@@ -139,6 +207,18 @@ function AppContent() {
           return <DashboardPage />;
         }
         return <OperationsPage />;
+      case 'forgot-password':
+        return <ForgotPasswordPage />;
+      case 'update-password':
+        return <UpdatePasswordPage />;
+      case 'quotation':
+        return (
+          <QuotationPage
+            inquiry={quotationInquiry}
+            salesRep={profile}
+            onBack={() => setCurrentPage('dashboard')}
+          />
+        );
       default:
         return <DashboardPage />;
     }

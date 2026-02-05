@@ -11,7 +11,7 @@
     <color name="navigationDividerColorDark">#111827</color>
     <color name="shortcut_background">#F5F5F5</color>
     <integer name="splashScreenFadeOutDuration">300</integer>
-    <string name="appName" translatable="false">ATR CRM</string>
+    <string name="appName" translatable="false">ATREX FORCE</string>
     <string name="assetStatements">
     [{
         \"relation\": [\"delegate_permission/common.handle_all_urls\"],
@@ -27,7 +27,7 @@
     <string name="generatorApp" translatable="false">PWABuilder</string>
     <string name="hostName" translatable="false">atr-sales.vercel.app</string>
     <string name="launchUrl" translatable="false">https://atr-sales.vercel.app/</string>
-    <string name="launcherName" translatable="false">ATR CRM</string>
+    <string name="launcherName" translatable="false">ATREX FORCE</string>
     <string name="orientation" translatable="false">default</string>
     <string name="providerAuthority" translatable="false">app.vercel.atr_sales.twa.fileprovider</string>
     <string name="webManifestUrl" translatable="false">https://atr-sales.vercel.app/manifest.webmanifest</string>

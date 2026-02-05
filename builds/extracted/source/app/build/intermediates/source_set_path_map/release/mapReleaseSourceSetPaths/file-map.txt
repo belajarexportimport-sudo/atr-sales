@@ -19,10 +19,10 @@ app.vercel.atr_sales.twa.app-core-1.13.0-17 /root/.gradle/caches/8.11.1/transfor
 app.vercel.atr_sales.twa.app-profileinstaller-1.3.1-18 /root/.gradle/caches/8.11.1/transforms/bb4a0d32d1b17a1dcea0cf71d2bde5e0/transformed/profileinstaller-1.3.1/res
 app.vercel.atr_sales.twa.app-browser-1.9.0-alpha04-19 /root/.gradle/caches/8.11.1/transforms/be57bd43967b699c12a0f6b8bd2f21c6/transformed/browser-1.9.0-alpha04/res
 app.vercel.atr_sales.twa.app-appcompat-resources-1.7.0-20 /root/.gradle/caches/8.11.1/transforms/d6f2e3c3aeb152384c7f6efcc9d99697/transformed/appcompat-resources-1.7.0/res
-app.vercel.atr_sales.twa.app-pngs-21 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/build/generated/res/pngs/release
-app.vercel.atr_sales.twa.app-resValues-22 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/build/generated/res/resValues/release
-app.vercel.atr_sales.twa.app-packageReleaseResources-23 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/build/intermediates/incremental/release/packageReleaseResources/merged.dir
-app.vercel.atr_sales.twa.app-packageReleaseResources-24 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/build/intermediates/incremental/release/packageReleaseResources/stripped.dir
-app.vercel.atr_sales.twa.app-release-25 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/build/intermediates/merged_res/release/mergeReleaseResources
-app.vercel.atr_sales.twa.app-main-26 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/src/main/res
-app.vercel.atr_sales.twa.app-release-27 /tmp/pwabuilder-cloudapk--19-OHzomeV3IxaM/app/src/release/res
+app.vercel.atr_sales.twa.app-pngs-21 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/build/generated/res/pngs/release
+app.vercel.atr_sales.twa.app-resValues-22 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/build/generated/res/resValues/release
+app.vercel.atr_sales.twa.app-packageReleaseResources-23 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/build/intermediates/incremental/release/packageReleaseResources/merged.dir
+app.vercel.atr_sales.twa.app-packageReleaseResources-24 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/build/intermediates/incremental/release/packageReleaseResources/stripped.dir
+app.vercel.atr_sales.twa.app-release-25 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/build/intermediates/merged_res/release/mergeReleaseResources
+app.vercel.atr_sales.twa.app-main-26 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/src/main/res
+app.vercel.atr_sales.twa.app-release-27 /tmp/pwabuilder-cloudapk--19-y2IUdxAASCSH/app/src/release/res

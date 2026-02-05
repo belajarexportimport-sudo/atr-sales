@@ -8,7 +8,7 @@ import { userService } from '../services/userService';
 import { leadService } from '../services/leadService';
 import { commissionService } from '../services/commissionService';
 
-export default function DashboardPage({ onEditInquiry }) {
+export default function DashboardPage({ onEditInquiry, onQuote }) {
     const { user, profile } = useAuth();
     const [stats, setStats] = useState({
         totalRevenue: 0,
@@ -191,7 +191,12 @@ export default function DashboardPage({ onEditInquiry }) {
                         Hello, {profile?.full_name?.split(' ')[0] || 'Sales'} 👋
                     </h1>
                     <div className="flex items-center gap-2">
-                        <p className="text-gray-400 text-sm">v3.9.1 - Commission Breakdown</p>
+                        <p className="text-gray-400 text-sm">v4.2 - Quotation Ready</p>
+                        {profile?.sales_code && (
+                            <span className="text-[10px] bg-secondary-800 text-primary-400 px-2 py-0.5 rounded border border-primary-900/50 font-mono tracking-wider">
+                                🆔 {profile.sales_code}
+                            </span>
+                        )}
                         <button
                             onClick={() => {
                                 if ('serviceWorker' in navigator) {
@@ -364,8 +369,9 @@ export default function DashboardPage({ onEditInquiry }) {
                                                     </div>
                                                 ) : <div className="font-mono text-xs text-gray-600">-</div>}
                                             </td>
-                                            <td className="px-4 py-3 text-sm">
-                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors">✏️</button>
+                                            <td className="px-4 py-3 text-sm flex gap-2">
+                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
+                                                <button onClick={() => onQuote && onQuote(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Print Quote">📄</button>
                                             </td>
                                         </tr>
                                     ))}

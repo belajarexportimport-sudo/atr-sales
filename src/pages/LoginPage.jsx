@@ -22,7 +22,8 @@ export default function LoginPage() {
             const { error: signUpError } = await signUp(email, password, { full_name: fullName });
 
             if (signUpError) {
-                setError(signUpError);
+                console.error("SIGNUP ERROR DETAILS:", signUpError);
+                setError(signUpError.message || "Failed to sign up. Check console for details.");
                 setLoading(false);
             } else {
                 setSuccessMessage('Account created! Please check your email to verify your account.');
@@ -106,6 +107,17 @@ export default function LoginPage() {
                             required
                             disabled={loading}
                         />
+                    </div>
+
+                    <div className="flex justify-end mb-4">
+                        <button
+                            type="button"
+                            onClick={() => window.location.href = '/forgot-password'} // Hack for now, will refactor if router exists
+                            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                            disabled={loading}
+                        >
+                            Forgot Password?
+                        </button>
                     </div>
 
                     <button
