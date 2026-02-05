@@ -28,7 +28,7 @@ export default function Navigation({ currentPage, onNavigate }) {
                         <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('dashboard')}>
                             <img src="/icon-192.png" alt="Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-primary-900/50" />
                             <span className="font-bold text-lg text-primary-500 tracking-wide uppercase">ATREX FORCE</span>
-                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v4.1</span>
+                            <span className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900">v4.2</span>
                         </div>
                     </div>
 
