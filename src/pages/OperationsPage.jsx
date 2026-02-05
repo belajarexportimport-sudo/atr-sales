@@ -23,6 +23,8 @@ export default function OperationsPage() {
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [pendingCommissions, setPendingCommissions] = useState([]);
     const [loadingCommissions, setLoadingCommissions] = useState(true);
+    const [pendingQuotes, setPendingQuotes] = useState([]); // NEW
+    const [loadingQuotes, setLoadingQuotes] = useState(true); // NEW
     const [userInitials, setUserInitials] = useState({});
 
     // Fetch pending AWB requests and users on mount
@@ -30,6 +32,7 @@ export default function OperationsPage() {
         fetchPendingRequests();
         fetchPendingUsers();
         fetchPendingCommissions();
+        fetchPendingQuotes(); // NEW
     }, []);
 
     const handleSubmit = async (e) => {
@@ -438,6 +441,61 @@ export default function OperationsPage() {
                                                 className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                                             >
                                                 ✅ Approve
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Pending Quote Approvals Section */}
+            <div className="card mb-6 border-l-4 border-blue-500 bg-secondary-800/80">
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">📜 Pending Quote Approvals</h2>
+
+                {loadingQuotes ? (
+                    <p className="text-gray-500">Loading quotes...</p>
+                ) : pendingQuotes.length === 0 ? (
+                    <p className="text-gray-500">No pending quote requests</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GP</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Origin/Dest</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-700">
+                                {pendingQuotes.map((q) => (
+                                    <tr key={q.inquiry_id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm text-gray-400">{formatDate(q.created_at)}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-200">{q.sales_rep}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-200">{q.customer_name}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-200 font-mono">{formatCurrency(q.est_revenue)}</td>
+                                        <td className="px-4 py-3 text-sm text-green-400 font-mono">{formatCurrency(q.est_gp)}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-500">{q.origin} → {q.destination}</td>
+                                        <td className="px-4 py-3 text-sm flex gap-2">
+                                            <button
+                                                onClick={() => handleApproveQuote(q.inquiry_id, q.customer_name)}
+                                                disabled={loading}
+                                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                            >
+                                                ✓ Approve
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectQuote(q.inquiry_id, q.customer_name)}
+                                                disabled={loading}
+                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                            >
+                                                ✕ Reject
                                             </button>
                                         </td>
                                     </tr>

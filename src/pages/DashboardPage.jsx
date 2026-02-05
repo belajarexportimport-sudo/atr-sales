@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-// import { supabase } from '../lib/supabase'; // REMOVED: Services only
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { formatCurrency, getStatusColor, calculateCommission } from '../lib/utils';
 // Services
 import { inquiryService } from '../services/inquiryService';
@@ -10,6 +11,7 @@ import { commissionService } from '../services/commissionService';
 
 export default function DashboardPage({ onEditInquiry, onQuote }) {
     const { user, profile } = useAuth();
+    const { showToast } = useToast();
     const [stats, setStats] = useState({
         totalRevenue: 0,
         potentialRevenue: 0,
@@ -78,6 +80,22 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
             console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRequestApproval = async (inquiryId) => {
+        if (!confirm('Request approval for this quotation (check margin/GP first)?')) return;
+        try {
+            // Call Supabase directly or via service
+            // Using direct supabase call for speed, but ideal refactor is service
+            const { error } = await supabase.rpc('request_quote_approval', { p_inquiry_id: inquiryId });
+            if (error) throw error;
+
+            showToast('✅ Approval Requested!', 'success');
+            fetchDashboardData();
+        } catch (error) {
+            console.error('Error requesting approval:', error);
+            showToast('❌ Failed: ' + error.message, 'error');
         }
     };
 
@@ -369,10 +387,16 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                                                     </div>
                                                 ) : <div className="font-mono text-xs text-gray-600">-</div>}
                                             </td>
-                                            <td className="px-4 py-3 text-sm flex gap-2">
-                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
-                                                <button onClick={() => onQuote && onQuote(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Print Quote">📄</button>
-                                            </td>
+                                            {inquiry.quote_status === 'Draft' && (
+                                                <button
+                                                    onClick={() => handleRequestApproval(inquiry.id)}
+                                                    className="text-yellow-400 hover:text-yellow-300 transition-colors text-xs border border-yellow-600 px-2 py-0.5 rounded"
+                                                    title="Request Approval">
+                                                    ✋ Request
+                                                </button>
+                                            )}
+                                            <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
+                                            <button onClick={() => onQuote && onQuote(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Print Quote">📄</button>
                                         </tr>
                                     ))}
                                 </tbody>
