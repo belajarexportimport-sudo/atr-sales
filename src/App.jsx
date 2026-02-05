@@ -211,7 +211,12 @@ function AppContent() {
         if (profile?.role !== 'admin') {
           return <DashboardPage />;
         }
-        return <OperationsPage />;
+        return <OperationsPage
+          onViewInquiry={(inquiry) => {
+            setEditingInquiry(inquiry);
+            setCurrentPage('new-inquiry');
+          }}
+        />;
       case 'forgot-password':
         return <ForgotPasswordPage />;
       case 'update-password':

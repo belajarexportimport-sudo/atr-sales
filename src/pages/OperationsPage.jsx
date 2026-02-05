@@ -5,8 +5,9 @@ import { formatDate, formatCurrency } from '../lib/utils';
 
 import { useToast } from '../contexts/ToastContext';
 import { useModal } from '../contexts/ModalContext';
+import { inquiryService } from '../services/inquiryService';
 
-export default function OperationsPage() {
+export default function OperationsPage({ onViewInquiry }) {
     const { user } = useAuth();
     const { showToast } = useToast();
     const { showConfirm } = useModal();
@@ -36,6 +37,24 @@ export default function OperationsPage() {
         fetchPendingCommissions();
         fetchPendingQuotes(); // NEW
     }, []);
+
+    // Helper: Fetch Full Inquiry Details and Open View
+    const handleViewDetails = async (inquiryId) => {
+        try {
+            setLoading(true);
+            const fullInquiry = await inquiryService.getById(inquiryId);
+            if (fullInquiry && onViewInquiry) {
+                onViewInquiry(fullInquiry);
+            } else {
+                showToast('Failed to load details or View handler missing', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Error loading details', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -427,6 +446,13 @@ export default function OperationsPage() {
                                         <td className="px-4 py-3 text-sm text-gray-500">{formatDate(comm.created_at)}</td>
                                         <td className="px-4 py-3 text-sm">
                                             <button
+                                                onClick={() => handleViewDetails(comm.inquiry_id)}
+                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs shadow-sm"
+                                                title="View Details"
+                                            >
+                                                🔍 View
+                                            </button>
+                                            <button
                                                 onClick={() => handleApproveCommission(comm.inquiry_id, comm.sales_rep, comm.est_commission)}
                                                 disabled={loading}
                                                 className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 text-xs shadow-sm shadow-yellow-900/50"
@@ -475,6 +501,13 @@ export default function OperationsPage() {
                                         <td className="px-4 py-3 text-sm text-gray-400">{formatDate(req.requested_at)}</td>
                                         <td className="px-4 py-3 text-sm">
                                             <button
+                                                onClick={() => handleViewDetails(req.inquiry_id)}
+                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                                title="View Details"
+                                            >
+                                                🔍
+                                            </button>
+                                            <button
                                                 onClick={() => handleApproveAWB(req.request_id, req.customer_name)}
                                                 disabled={loading}
                                                 className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
@@ -522,6 +555,13 @@ export default function OperationsPage() {
                                         <td className="px-4 py-3 text-sm text-green-400 font-mono">{formatCurrency(q.est_gp)}</td>
                                         <td className="px-4 py-3 text-xs text-gray-500">{q.origin} → {q.destination}</td>
                                         <td className="px-4 py-3 text-sm flex gap-2">
+                                            <button
+                                                onClick={() => handleViewDetails(q.inquiry_id)}
+                                                className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                                                title="View Details"
+                                            >
+                                                🔍
+                                            </button>
                                             <button
                                                 onClick={() => handleApproveQuote(q.inquiry_id, q.customer_name)}
                                                 disabled={loading}
