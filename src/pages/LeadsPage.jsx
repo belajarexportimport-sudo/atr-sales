@@ -5,10 +5,12 @@ import { formatDate, getLeadStatusColor } from '../lib/utils';
 import LeadFormModal from '../components/LeadFormModal';
 
 import { useToast } from '../contexts/ToastContext';
+import { useModal } from '../contexts/ModalContext';
 
 export default function LeadsPage({ onCreateRFQ }) {
     const { user } = useAuth();
     const { showToast } = useToast();
+    const { showConfirm } = useModal();
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -53,22 +55,22 @@ export default function LeadsPage({ onCreateRFQ }) {
         setShowModal(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this lead?')) return;
+    const handleDelete = (id) => {
+        showConfirm('Delete Lead?', 'Are you sure you want to delete this lead? This cannot be undone.', async () => {
+            try {
+                const { error } = await supabase
+                    .from('leads')
+                    .delete()
+                    .eq('id', id);
 
-        try {
-            const { error } = await supabase
-                .from('leads')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-
-            fetchLeads();
-        } catch (error) {
-            console.error('Error deleting lead:', error);
-            showToast('Failed to delete lead', 'error');
-        }
+                if (error) throw error;
+                fetchLeads();
+                showToast('Lead deleted successfully', 'success');
+            } catch (error) {
+                console.error('Error deleting lead:', error);
+                showToast('Failed to delete lead', 'error');
+            }
+        }, 'error');
     };
 
     const handleCreateRFQ = (lead) => {

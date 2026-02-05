@@ -204,6 +204,8 @@ function AppContent() {
         return <TrackingPage />;
       case 'leaderboard':
         return <LeaderboardPage />;
+      case 'marketplace':
+        return <MarketplacePage />;
       case 'ops':
         // Protected Route
         if (profile?.role !== 'admin') {
