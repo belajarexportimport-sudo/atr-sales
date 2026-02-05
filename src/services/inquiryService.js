@@ -69,12 +69,13 @@ export const inquiryService = {
      * Prevents overwriting 'user_id' (Data Stealing) and 'commission' (if not admin)
      */
     async update(id, updates, userRole) {
-        // SAFETY 1: Never allow changing owner via update
+        // SAFETY 1: Never allow changing owner via update (Unless Admin/Null logic controlled by Caller, but here we enforce strictness)
+        // CHECK: If admin wants to release to pool, they set user_id to null.
+        // We only allow user_id change if role is admin.
         const cleanUpdates = { ...updates };
-        delete cleanUpdates.user_id;
-
-        // SAFETY 2: Protect commission if not admin
         if (userRole !== 'admin') {
+            delete cleanUpdates.user_id;
+            // SAFETY 2: Protect commission if not admin
             delete cleanUpdates.est_commission;
             delete cleanUpdates.commission_approved;
             delete cleanUpdates.commission_amount;

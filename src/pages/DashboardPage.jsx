@@ -9,9 +9,13 @@ import { userService } from '../services/userService';
 import { leadService } from '../services/leadService';
 import { commissionService } from '../services/commissionService';
 
+import { useToast } from '../contexts/ToastContext';
+import { useModal } from '../contexts/ModalContext';
+
 export default function DashboardPage({ onEditInquiry, onQuote }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
+    const { showConfirm } = useModal();
     const [stats, setStats] = useState({
         totalRevenue: 0,
         potentialRevenue: 0,
@@ -83,20 +87,20 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         }
     };
 
-    const handleRequestApproval = async (inquiryId) => {
-        if (!confirm('Request approval for this quotation (check margin/GP first)?')) return;
-        try {
-            // Call Supabase directly or via service
-            // Using direct supabase call for speed, but ideal refactor is service
-            const { error } = await supabase.rpc('request_quote_approval', { p_inquiry_id: inquiryId });
-            if (error) throw error;
+    const handleRequestApproval = (inquiryId) => {
+        showConfirm('Request Approval?', 'Submit this quotation for Admin approval? Check margin/GP first.', async () => {
+            try {
+                // Call Supabase directly or via service
+                const { error } = await supabase.rpc('request_quote_approval', { p_inquiry_id: inquiryId });
+                if (error) throw error;
 
-            showToast('✅ Approval Requested!', 'success');
-            fetchDashboardData();
-        } catch (error) {
-            console.error('Error requesting approval:', error);
-            showToast('❌ Failed: ' + error.message, 'error');
-        }
+                showToast('✅ Approval Requested!', 'success');
+                fetchDashboardData();
+            } catch (error) {
+                console.error('Error requesting approval:', error);
+                showToast('❌ Failed: ' + error.message, 'error');
+            }
+        });
     };
 
     const getSalesName = (id) => {

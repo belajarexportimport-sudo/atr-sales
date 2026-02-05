@@ -252,8 +252,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 </div>
             )}
 
-            {/* ADMIN ONLY: Inject to Open Market Toggle */}
-            {profile?.role === 'admin' && !leadId && !isEditMode && (
+            {/* ADMIN ONLY: Inject to Open Market Toggle (Release to Shark Tank) */}
+            {profile?.role === 'admin' && (
                 <div className="bg-indigo-900/30 border border-indigo-700/50 p-4 rounded-lg mb-6 flex items-center justify-between">
                     <div>
                         <h3 className="text-indigo-200 font-bold flex items-center gap-2">🦈 Shark Tank Inject</h3>

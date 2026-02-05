@@ -4,10 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatDate, formatCurrency } from '../lib/utils';
 
 import { useToast } from '../contexts/ToastContext';
+import { useModal } from '../contexts/ModalContext';
 
 export default function OperationsPage() {
     const { user } = useAuth();
     const { showToast } = useToast();
+    const { showConfirm } = useModal();
     const [formData, setFormData] = useState({
         awb_number: '',
         status: 'In Transit',
@@ -120,28 +122,24 @@ export default function OperationsPage() {
     };
 
     // Approve AWB request
-    const handleApproveAWB = async (requestId, customerName) => {
-        if (!confirm(`Approve AWB request for ${customerName}?`)) return;
-
-        try {
-            setLoading(true);
-            const { data: awbNumber, error } = await supabase.rpc('approve_awb_request', {
-                p_request_id: requestId,
-                p_approved_by: user.id
-            });
-
-            if (error) throw error;
-
-            if (error) throw error;
-
-            showToast(`✅ AWB Generated: ${awbNumber}`, 'success');
-            fetchPendingRequests(); // Refresh list
-        } catch (error) {
-            console.error('Error approving AWB:', error);
-            showToast(`❌ Failed to approve AWB: ${error.message}`, 'error');
-        } finally {
-            setLoading(false);
-        }
+    const handleApproveAWB = (requestId, customerName) => {
+        showConfirm('Approve AWB?', `Generate AWB for ${customerName}?`, async () => {
+            try {
+                setLoading(true);
+                const { data: awbNumber, error } = await supabase.rpc('approve_awb_request', {
+                    p_request_id: requestId,
+                    p_approved_by: user.id
+                });
+                if (error) throw error;
+                showToast(`✅ AWB Generated: ${awbNumber}`, 'success');
+                fetchPendingRequests();
+            } catch (error) {
+                console.error('Error approving AWB:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
     };
 
     // Fetch pending users
@@ -149,7 +147,6 @@ export default function OperationsPage() {
         try {
             setLoadingUsers(true);
             const { data, error } = await supabase.rpc('get_pending_users');
-
             if (error) throw error;
             setPendingUsers(data || []);
         } catch (error) {
@@ -160,65 +157,58 @@ export default function OperationsPage() {
     };
 
     // Approve user
-    const handleApproveUser = async (userId, email) => {
+    const handleApproveUser = (userId, email) => {
         const initials = userInitials[userId];
 
         if (!initials || initials.length !== 2) {
-            alert('❌ Please enter 2-letter initials (e.g., AD, RF)');
+            showToast('Please enter 2-letter initials (e.g., AD, RF)', 'error');
             return;
         }
 
-        if (!confirm(`Approve user ${email} with initials ${initials}?`)) return;
+        showConfirm('Approve User?', `Approve ${email} with initials ${initials}?`, async () => {
+            try {
+                setLoading(true);
+                const { error } = await supabase.rpc('approve_user', {
+                    p_user_id: userId,
+                    p_initials: initials.toUpperCase(),
+                    p_approved_by: user.id
+                });
 
-        try {
-            setLoading(true);
-            const { error } = await supabase.rpc('approve_user', {
-                p_user_id: userId,
-                p_initials: initials.toUpperCase(),
-                p_approved_by: user.id
-            });
-
-            if (error) throw error;
-
-            if (error) throw error;
-
-            showToast(`✅ User ${email} approved with initials ${initials}!`, 'success');
-            fetchPendingUsers(); // Refresh list
-            setUserInitials(prev => {
-                const updated = { ...prev };
-                delete updated[userId];
-                return updated;
-            });
-        } catch (error) {
-            console.error('Error approving user:', error);
-            showToast(`❌ Failed to approve user: ${error.message}`, 'error');
-        } finally {
-            setLoading(false);
-        }
+                if (error) throw error;
+                showToast(`✅ User ${email} approved!`, 'success');
+                fetchPendingUsers();
+                setUserInitials(prev => {
+                    const updated = { ...prev };
+                    delete updated[userId];
+                    return updated;
+                });
+            } catch (error) {
+                console.error('Error approving user:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
     };
 
     // Reject user
-    const handleRejectUser = async (userId, email) => {
-        if (!confirm(`Reject and delete user ${email}? This cannot be undone.`)) return;
-
-        try {
-            setLoading(true);
-            const { error } = await supabase.rpc('reject_user', {
-                p_user_id: userId
-            });
-
-            if (error) throw error;
-
-            if (error) throw error;
-
-            showToast(`✅ User ${email} rejected and deleted.`, 'info');
-            fetchPendingUsers(); // Refresh list
-        } catch (error) {
-            console.error('Error rejecting user:', error);
-            showToast(`❌ Failed to reject user: ${error.message}`, 'error');
-        } finally {
-            setLoading(false);
-        }
+    const handleRejectUser = (userId, email) => {
+        showConfirm('Reject User?', `Reject and delete ${email}? Cannot be undone.`, async () => {
+            try {
+                setLoading(true);
+                const { error } = await supabase.rpc('reject_user', {
+                    p_user_id: userId
+                });
+                if (error) throw error;
+                showToast(`User ${email} rejected.`, 'info');
+                fetchPendingUsers();
+            } catch (error) {
+                console.error('Error rejecting user:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }, 'error'); // Red button for reject
     };
 
 
@@ -248,29 +238,78 @@ export default function OperationsPage() {
     };
 
     // Approve Commission
-    const handleApproveCommission = async (inquiryId, salesName, amount) => {
-        if (!confirm(`Approve commission of ${formatCurrency(amount)} for ${salesName}?`)) return;
+    const handleApproveCommission = (inquiryId, salesName, amount) => {
+        showConfirm('Approve Commission?', `Approve ${formatCurrency(amount)} for ${salesName}?`, async () => {
+            try {
+                setLoading(true);
+                const { error } = await supabase.rpc('approve_commission', {
+                    p_inquiry_id: inquiryId,
+                    p_approved_by: user.id,
+                    p_commission_amount: parseFloat(amount)
+                });
+                if (error) throw error;
+                showToast('✅ Commission Approved!', 'success');
+                fetchPendingCommissions();
+            } catch (error) {
+                console.error('Error approving commission:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    };
 
+    // Fetch pending quotes
+    const fetchPendingQuotes = async () => {
         try {
-            setLoading(true);
-            const { error } = await supabase.rpc('approve_commission', {
-                p_inquiry_id: inquiryId,
-                p_approved_by: user.id,
-                p_commission_amount: parseFloat(amount) // Pass the edited amount as number
-            });
-
+            setLoadingQuotes(true);
+            const { data, error } = await supabase.rpc('get_pending_quotes');
             if (error) throw error;
-
-            if (error) throw error;
-
-            showToast('✅ Commission Approved!', 'success');
-            fetchPendingCommissions(); // Refresh list
+            setPendingQuotes(data || []);
         } catch (error) {
-            console.error('Error approving commission:', error);
-            showToast(`❌ Failed to approve: ${error.message}`, 'error');
+            console.error('Error fetching quotes:', error);
         } finally {
-            setLoading(false);
+            setLoadingQuotes(false);
         }
+    };
+
+    // Approve Quote
+    const handleApproveQuote = (inquiryId, customerName) => {
+        showConfirm('Approve Quote?', `Approve quotation for ${customerName}?`, async () => {
+            try {
+                setLoading(true);
+                const { error } = await supabase.rpc('approve_quote', {
+                    p_inquiry_id: inquiryId,
+                    p_approved_by: user.id
+                });
+                if (error) throw error;
+                showToast('✅ Quotation Approved!', 'success');
+                fetchPendingQuotes();
+            } catch (error) {
+                console.error('Error approving quote:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    };
+
+    // Reject Quote
+    const handleRejectQuote = (inquiryId, customerName) => {
+        showConfirm('Reject Quote?', `Reject quotation for ${customerName}?`, async () => {
+            try {
+                setLoading(true);
+                const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
+                if (error) throw error;
+                showToast('⚠️ Quotation Rejected', 'info');
+                fetchPendingQuotes();
+            } catch (error) {
+                console.error('Error rejecting quote:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }, 'error');
     };
 
     return (

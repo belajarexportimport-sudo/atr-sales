@@ -14,6 +14,7 @@ import Navigation from './components/Navigation'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UpdatePasswordPage from './pages/UpdatePasswordPage'
 import QuotationPage from './pages/QuotationPage'
+import LeaderboardPage from './pages/LeaderboardPage'
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -201,6 +202,8 @@ function AppContent() {
         />;
       case 'tracking':
         return <TrackingPage />;
+      case 'leaderboard':
+        return <LeaderboardPage />;
       case 'ops':
         // Protected Route
         if (profile?.role !== 'admin') {

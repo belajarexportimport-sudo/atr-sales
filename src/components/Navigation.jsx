@@ -11,6 +11,7 @@ export default function Navigation({ currentPage, onNavigate }) {
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'marketplace', label: 'Shark Tank', icon: '🦈' },
+        { id: 'leaderboard', label: 'Ranking', icon: '🏆' },
         { id: 'leads', label: 'Leads', icon: '👥' },
         { id: 'new-inquiry', label: 'New RFQ', icon: '📝' },
         { id: 'tracking', label: 'Tracking', icon: '📦' },
