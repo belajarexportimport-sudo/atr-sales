@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './index.css'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
@@ -19,7 +19,13 @@ import SettingsPage from './pages/SettingsPage'
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // Initialize state based on URL
+  const [currentPage, setCurrentPage] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/forgot-password') return 'forgot-password';
+    if (path === '/update-password') return 'update-password';
+    return 'dashboard';
+  });
   const [selectedLead, setSelectedLead] = useState(null);
   const [editingInquiry, setEditingInquiry] = useState(null);
   const [quotationInquiry, setQuotationInquiry] = useState(null);
@@ -35,13 +41,7 @@ function AppContent() {
   // If `UpdatePasswordPage` is reached via a URL link from email, we need to handle that.
 
   // Let's modify the initial state of currentPage to check URL path
-  useState(() => {
-    const path = window.location.pathname;
-    // Check both path and hash for recovery
-    if (path === '/forgot-password') return 'forgot-password';
-    if (path === '/update-password') return 'update-password';
-    return 'dashboard';
-  });
+
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
