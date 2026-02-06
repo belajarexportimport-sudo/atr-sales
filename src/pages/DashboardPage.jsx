@@ -70,19 +70,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         </div>
     );
 }
-totalRevenue: 0,
-    potentialRevenue: 0,
-        lostRevenue: 0,
-            totalGP: 0,
 
-                // COMMISSION BREAKDOWN
-                commProjection: 0, // Potential (Proposal/Nego)
-                    commWon: 0,        // Realized but NOT Paid
-                        commPaid: 0,       // Paid to Sales
-
-                            activeInquiries: 0,
-                                totalLeads: 0
-    });
 const [inquiries, setInquiries] = useState([]);
 const [salesReps, setSalesReps] = useState([]);
 const [selectedSalesId, setSelectedSalesId] = useState('all');
