@@ -50,12 +50,7 @@ export const inquiryService = {
         return data;
     },
 
-    /**
-     * Create new inquiry
-     */
-    /**
-     * Create new inquiry
-     */
+
     async create(inquiryData, userRole) {
         const { data, error } = await supabase
             .from('inquiries')
