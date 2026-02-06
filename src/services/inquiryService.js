@@ -99,8 +99,7 @@ export const inquiryService = {
             const revVal = parseFloat(cleanUpdates.est_revenue || 0);
             const gpVal = parseFloat(cleanUpdates.est_gp || 0);
 
-            // DEBUG ALERT (As requested)
-            alert(`DEBUG: Admin Save Triggered!\nSaving Revenue: ${revVal}\nSaving GP: ${gpVal}`);
+            // DEBUG ALERT REMOVED
             console.log('🚀 Using Admin RPC Tunnel for Financials');
 
             const { error: rpcError } = await supabase.rpc('admin_update_financials', {
@@ -112,11 +111,9 @@ export const inquiryService = {
 
             if (rpcError) {
                 console.error('❌ RPC Update Failed:', rpcError);
-                alert('❌ ERROR Saving Revenue: ' + rpcError.message);
                 throw rpcError;
             } else {
                 console.log('✅ RPC Update Success');
-                // alert('✅ Revenue Saved Successfully via RPC!');
                 rpcSuccess = true;
 
                 // Clear fields to prevent conflict with standard update
