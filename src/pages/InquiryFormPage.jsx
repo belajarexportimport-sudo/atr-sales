@@ -231,7 +231,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
 
                 await inquiryService.update(inquiry.id, inquiryData, profile?.role);
             } else {
-                await inquiryService.create(inquiryData);
+                await inquiryService.create(inquiryData, profile?.role);
             }
 
             showToast('✅ Inquiry saved successfully!', 'success');

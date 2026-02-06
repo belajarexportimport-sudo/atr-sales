@@ -53,7 +53,10 @@ export const inquiryService = {
     /**
      * Create new inquiry
      */
-    async create(inquiryData) {
+    /**
+     * Create new inquiry
+     */
+    async create(inquiryData, userRole) {
         const { data, error } = await supabase
             .from('inquiries')
             .insert([inquiryData])
@@ -61,6 +64,20 @@ export const inquiryService = {
             .single();
 
         handleError(error, 'createInquiry');
+
+        // [FIX] Force update financials via RPC for Admin (Bypass INSERT RLS limitations)
+        if (data && userRole === 'admin' && (inquiryData.est_revenue || inquiryData.est_gp)) {
+            console.log('🚀 [CREATE] Using Admin RPC Tunnel for Financials');
+            const { error: rpcError } = await supabase.rpc('admin_update_financials', {
+                p_inquiry_id: data.id,
+                p_revenue: parseFloat(inquiryData.est_revenue || 0),
+                p_gp: parseFloat(inquiryData.est_gp || 0),
+                p_commission: parseFloat(inquiryData.est_commission || 0)
+            });
+
+            if (rpcError) console.error('❌ RPC Create-Update Failed:', rpcError);
+        }
+
         return data;
     },
 
