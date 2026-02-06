@@ -73,6 +73,16 @@ export const inquiryService = {
         // CHECK: If admin wants to release to pool, they set user_id to null.
         // We only allow user_id change if role is admin.
         const cleanUpdates = { ...updates };
+
+        // DEBUG: Check why RPC Tunnel might be skipped
+        console.log('🔍 UPDATE DEBUG:', {
+            id,
+            userRole,
+            hasRevenue: cleanUpdates.est_revenue !== undefined,
+            revenueValue: cleanUpdates.est_revenue,
+            fullUpdates: cleanUpdates
+        });
+
         if (userRole !== 'admin') {
             delete cleanUpdates.user_id;
             // SAFETY 2: Protect commission if not admin
@@ -81,6 +91,48 @@ export const inquiryService = {
             delete cleanUpdates.commission_amount;
         }
 
+        // [FIX] Force update financials via RPC for Admin (Bypass RLS)
+        let rpcSuccess = false;
+
+        // CHECK: Only trigger if Admin AND (Revenue OR GP is being updated)
+        if (userRole === 'admin' && (cleanUpdates.est_revenue !== undefined || cleanUpdates.est_gp !== undefined)) {
+            const revVal = parseFloat(cleanUpdates.est_revenue || 0);
+            const gpVal = parseFloat(cleanUpdates.est_gp || 0);
+
+            // DEBUG ALERT (As requested)
+            alert(`DEBUG: Admin Save Triggered!\nSaving Revenue: ${revVal}\nSaving GP: ${gpVal}`);
+            console.log('🚀 Using Admin RPC Tunnel for Financials');
+
+            const { error: rpcError } = await supabase.rpc('admin_update_financials', {
+                p_inquiry_id: id,
+                p_revenue: revVal,
+                p_gp: gpVal,
+                p_commission: parseFloat(cleanUpdates.est_commission || 0)
+            });
+
+            if (rpcError) {
+                console.error('❌ RPC Update Failed:', rpcError);
+                alert('❌ ERROR Saving Revenue: ' + rpcError.message);
+                throw rpcError;
+            } else {
+                console.log('✅ RPC Update Success');
+                // alert('✅ Revenue Saved Successfully via RPC!');
+                rpcSuccess = true;
+
+                // Clear fields to prevent conflict with standard update
+                delete cleanUpdates.est_revenue;
+                delete cleanUpdates.est_gp;
+                delete cleanUpdates.est_commission;
+                delete cleanUpdates.commission_amount;
+            }
+        }
+
+        // If nothing left to update (only financials changed), return success immediately
+        if (Object.keys(cleanUpdates).length === 0 && rpcSuccess) {
+            return { id, ...updates }; // Mock return
+        }
+
+        // Standard Update for remaining fields (Status, AWB, etc.)
         const { data, error } = await supabase
             .from('inquiries')
             .update(cleanUpdates)

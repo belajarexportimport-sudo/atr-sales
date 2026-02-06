@@ -212,9 +212,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 // Use first package dim as primary specific or join them
                 dimension: formData.packages.map(p => p.dimension).join('; '),
                 service_type: formData.service_type || null,
-                est_revenue: formData.est_revenue ? parseFloat(formData.est_revenue) : null,
-                est_gp: formData.est_gp ? parseFloat(formData.est_gp) : null,
-                est_commission: formData.est_commission,
+                est_revenue: formData.est_revenue ? parseFloat(String(formData.est_revenue).replace(/[^0-9.-]+/g, '')) : null,
+                est_gp: formData.est_gp ? parseFloat(String(formData.est_gp).replace(/[^0-9.-]+/g, '')) : null,
+                est_commission: formData.est_commission ? parseFloat(String(formData.est_commission).replace(/[^0-9.-]+/g, '')) : 0,
                 // OPEN MARKET LOGIC: If Open Market, Status is UNASSIGNED
                 status: (profile?.role === 'admin' && isOpenMarket) ? 'UNASSIGNED' : formData.status,
                 shipment_date: formData.shipment_date || null,
@@ -222,7 +222,13 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 packages: formData.packages // Save full structure to JSONB
             };
 
+            console.log('🚀 DEBUG: Submitting Inquiry Payload:', inquiryData); // ADDED FOR DEBUGGING
+
             if (inquiry?.id) {
+                // DEBUG: Verify Role before sending
+                // alert(`DEBUG COMPONENT:\nRole: ${profile?.role}\nRevenue: ${inquiryData.est_revenue}`);
+                console.log('🚀 Call Service Update:', inquiryData);
+
                 await inquiryService.update(inquiry.id, inquiryData, profile?.role);
             } else {
                 await inquiryService.create(inquiryData);
@@ -241,9 +247,16 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
 
     return (
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
-            <header className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v3.8 Modal)</h1>
-                <p className="text-gray-400">Create a new customer inquiry</p>
+            <header className="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-100">New Inquiry (v3.9 Fix)</h1>
+                    <p className="text-gray-400">Create a new customer inquiry</p>
+                </div>
+                <div className="text-right">
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${profile?.role === 'admin' ? 'bg-red-900 text-red-200' : 'bg-gray-700 text-gray-300'}`}>
+                        ROLE: {profile?.role || 'NONE'}
+                    </span>
+                </div>
             </header>
 
             {error && (

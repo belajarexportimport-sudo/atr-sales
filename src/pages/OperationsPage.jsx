@@ -331,7 +331,14 @@ export default function OperationsPage({ onViewInquiry }) {
             return;
         }
 
-        showConfirm('Approve Quote?', `Approve ${formatCurrency(revenue)} for ${customerName}?`, async () => {
+        showConfirm('Approve Quote?', `Confirm Revenue: ${formatCurrency(revenue)}\nGP: ${formatCurrency(gp)}\n\nProceed for ${customerName}?`, async () => {
+            console.log('DEBUG: Approving Quote Payload:', {
+                p_inquiry_id: inquiryId,
+                p_approved_by: user.id,
+                p_revenue: parseFloat(revenue),
+                p_gp: parseFloat(gp || 0)
+            });
+
             try {
                 setLoading(true);
                 const { error } = await supabase.rpc('approve_quote', {

@@ -5,8 +5,6 @@ import { useToast } from '../contexts/ToastContext';
 export default function ForgotPasswordPage() {
     const { showToast } = useToast();
     const [email, setEmail] = useState('');
-    // ...
-
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -25,8 +23,10 @@ export default function ForgotPasswordPage() {
             if (error) throw error;
 
             setMessage('Check your email for the password reset link.');
+            showToast('✅ Reset link sent!', 'success');
         } catch (err) {
             setError(err.message || 'Failed to reset password.');
+            showToast('❌ Failed to send link', 'error');
         } finally {
             setLoading(false);
         }
