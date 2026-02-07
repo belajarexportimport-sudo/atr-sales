@@ -55,8 +55,13 @@ export const inquiryService = {
 
 
 
+    /**
+     * Create inquiry with DUAL STRATEGY for guaranteed revenue save
+     * Strategy 1: Try normal INSERT (fast, standard)
+     * Strategy 2: Fallback to RPC if revenue not saved (guaranteed)
+     */
     async create(inquiryData, userRole) {
-        // Admin-created inquiries go straight to Pending
+        // Prepare data
         const dataToInsert = {
             ...inquiryData,
             quote_status: userRole === 'admin' ? 'Pending' : (inquiryData.quote_status || 'Draft')
@@ -73,21 +78,64 @@ export const inquiryService = {
             dataToInsert.est_commission = parseFloat(dataToInsert.est_commission);
         }
 
+        const hasFinancialData = userRole === 'admin' && dataToInsert.est_revenue > 0;
+
         console.log('💾 CREATE inquiry:', {
             customer: dataToInsert.customer_name,
             revenue: dataToInsert.est_revenue,
             gp: dataToInsert.est_gp,
-            status: dataToInsert.quote_status
+            hasFinancialData,
+            strategy: 'dual (INSERT + RPC fallback)'
         });
 
-        const { data, error } = await supabase
-            .from('inquiries')
-            .insert([dataToInsert])
-            .select()
-            .single();
+        // STRATEGY 1: Try normal INSERT first
+        try {
+            const { data, error } = await supabase
+                .from('inquiries')
+                .insert([dataToInsert])
+                .select()
+                .single();
 
-        handleError(error, 'createInquiry');
-        return data;
+            if (error) throw error;
+
+            // Verify revenue was saved (for admin with financial data)
+            if (hasFinancialData) {
+                if (!data.est_revenue || data.est_revenue === 0) {
+                    console.warn('⚠️ Revenue not saved via INSERT, trying RPC fallback...');
+                    throw new Error('Revenue not saved - RPC fallback required');
+                }
+            }
+
+            console.log('✅ INSERT success:', { id: data.id, revenue: data.est_revenue });
+            return data;
+
+        } catch (insertError) {
+            console.error('❌ INSERT failed:', insertError.message);
+
+            // STRATEGY 2: Admin with financial data - try RPC fallback
+            if (hasFinancialData) {
+                console.log('🔄 Trying RPC fallback: admin_create_inquiry_with_financials');
+
+                try {
+                    const { data: rpcData, error: rpcError } = await supabase
+                        .rpc('admin_create_inquiry_with_financials', {
+                            p_inquiry_data: dataToInsert
+                        });
+
+                    if (rpcError) throw rpcError;
+
+                    console.log('✅ RPC fallback success:', { id: rpcData.id, revenue: rpcData.est_revenue });
+                    return rpcData;
+
+                } catch (rpcError) {
+                    console.error('❌ RPC fallback failed:', rpcError.message);
+                    throw new Error(`Both INSERT and RPC failed: ${rpcError.message}`);
+                }
+            }
+
+            // If not admin or no financial data, throw original error
+            throw insertError;
+        }
     },
 
     /**
