@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { useToast } from '../../../hooks/useToast';
+import { useToast } from '../../../contexts/ToastContext';
 
 /**
  * ADMIN QUICK EDIT COMPONENT
