@@ -466,6 +466,14 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                                                 ) : <div className="font-mono text-xs text-gray-600">-</div>}
                                             </td>
                                             <td className="px-4 py-3 text-sm flex gap-2">
+                                                {/* Admin Quick Edit Button */}
+                                                {profile?.role === 'admin' && (
+                                                    <AdminQuickEdit
+                                                        inquiry={inquiry}
+                                                        onUpdate={fetchDashboardData}
+                                                    />
+                                                )}
+
                                                 {inquiry.quote_status === 'Draft' && (
                                                     <button
                                                         onClick={() => handleRequestApproval(inquiry.id)}
