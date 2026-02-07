@@ -55,10 +55,25 @@ This app is **Multi-Tenant**.
 
 ## 4. Key Workflows
 
-### A. Sales & Revenue (Current: Manual Input)
-*   **Location**: `features/sales/InquiryForm.jsx`
-*   **Process**: Sales inputs "Revenue" (IDR) and "Estimated GP" (IDR) manually.
-*   **Future Upgrade**: Will integrate with `features/pricing/` to auto-calculate these numbers based on Origin/Destination/Weight.
+### A. Revenue & Commission Workflow (IMPORTANT!)
+
+**Revenue Display Logic:**
+- Revenue **IS SAVED** when inquiry is created
+- Revenue **ONLY DISPLAYS** in Dashboard after commission approval
+
+**Complete Flow:**
+1. Sales creates inquiry → Revenue saved to `inquiries.est_revenue`
+2. Admin approves quote → Status: "Pending Commission Approval"
+3. Admin approves commission → Revenue **APPEARS** in Dashboard & Leaderboard
+
+**Why?** Revenue only counts after commission is approved to ensure metrics reflect finalized deals.
+
+**For Future Auto-Calculation (Rate Calculator/API):**
+- ✅ Target column: `est_revenue` (same column as manual entry)
+- ✅ No schema changes needed
+- ✅ Integration point: `InquiryFormPage.jsx` or `inquiryService.js`
+
+**Location**: `features/sales/InquiryForm.jsx`
 
 ### B. Commission Management
 *   **Location**: `features/commission/`

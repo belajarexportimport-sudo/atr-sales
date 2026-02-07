@@ -14,6 +14,7 @@ import { useModal } from '../../../contexts/ModalContext';
 
 // ... (previous imports)
 import AWBPrint from '../../../components/AWBPrint';
+import AdminQuickEdit from '../../operations/components/AdminQuickEdit';
 
 export default function DashboardPage({ onEditInquiry, onQuote }) {
     const { user, profile } = useAuth(); // FIXED: Missing destructuring
@@ -143,8 +144,10 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         }
 
         // --- REVENUE CALC ---
+        // REVENUE CALCULATION (SIMPLIFIED - NO APPROVAL NEEDED)
+        // Show ALL revenue immediately after admin fills it
         const totalRevenue = filteredData
-            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
+            .filter(inq => inq.est_revenue && inq.est_revenue > 0)
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
         const potentialRevenue = filteredData
