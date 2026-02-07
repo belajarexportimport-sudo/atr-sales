@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { formatDate, formatCurrency } from '../lib/utils';
+// import { supabase } from '../../../lib/supabase'; // REMOVED: Using services
+import { useAuth } from '../../../contexts/AuthContext';
+import { formatDate, formatCurrency } from '../../../lib/utils';
 
-import { useToast } from '../contexts/ToastContext';
-import { useModal } from '../contexts/ModalContext';
-import { inquiryService } from '../services/inquiryService';
+import { useToast } from '../../../contexts/ToastContext';
+import { useModal } from '../../../contexts/ModalContext';
+import { inquiryService } from '../../../services/inquiryService';
+import { trackingService } from '../../../services/trackingService';
+import { userService } from '../../../services/userService';
+import { commissionService } from '../../../services/commissionService';
 
 export default function OperationsPage({ onViewInquiry }) {
     const { user } = useAuth();
@@ -26,7 +29,9 @@ export default function OperationsPage({ onViewInquiry }) {
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [pendingCommissions, setPendingCommissions] = useState([]);
     const [loadingCommissions, setLoadingCommissions] = useState(true);
-    const [pendingQuotes, setPendingQuotes] = useState([]); // NEW
+    const [approvedCommissions, setApprovedCommissions] = useState([]); // NEW
+    const [loadingApproved, setLoadingApproved] = useState(true); // NEW
+    const [pendingQuotes, setPendingQuotes] = useState([]);
     const [loadingQuotes, setLoadingQuotes] = useState(true); // NEW
     const [userInitials, setUserInitials] = useState({});
 
@@ -35,7 +40,8 @@ export default function OperationsPage({ onViewInquiry }) {
         fetchPendingRequests();
         fetchPendingUsers();
         fetchPendingCommissions();
-        fetchPendingQuotes(); // NEW
+        fetchApprovedCommissions(); // NEW
+        fetchPendingQuotes();
     }, []);
 
     // Helper: Fetch Full Inquiry Details and Open View
@@ -72,17 +78,10 @@ export default function OperationsPage({ onViewInquiry }) {
         console.log('Ops Page - Submitting Payload:', payload);
 
         try {
-            const { data, error } = await supabase
-                .from('tracking_events')
-                .insert([payload])
-                .select();
+            // Service Call
+            const data = await trackingService.createEvent(payload);
 
-            console.log('Ops Page - Insert Result:', data, error);
-
-            if (error) {
-                alert(`Error Saving Data: ${error.message} (${error.code})`);
-                throw error;
-            }
+            console.log('Ops Page - Insert Result:', data);
 
             setMessage({ type: 'success', text: 'Tracking event updated successfully!' });
 
@@ -130,10 +129,8 @@ export default function OperationsPage({ onViewInquiry }) {
     const fetchPendingRequests = async () => {
         try {
             setLoadingRequests(true);
-            const { data, error } = await supabase.rpc('get_pending_awb_requests');
-
-            if (error) throw error;
-            setPendingRequests(data || []);
+            const data = await trackingService.getPendingRequests();
+            setPendingRequests(data);
         } catch (error) {
             console.error('Error fetching pending requests:', error);
         } finally {
@@ -146,11 +143,8 @@ export default function OperationsPage({ onViewInquiry }) {
         showConfirm('Approve AWB?', `Generate AWB for ${customerName}?`, async () => {
             try {
                 setLoading(true);
-                const { data: awbNumber, error } = await supabase.rpc('approve_awb_request', {
-                    p_request_id: requestId,
-                    p_approved_by: user.id
-                });
-                if (error) throw error;
+                setLoading(true);
+                const awbNumber = await trackingService.approveRequest(requestId, user.id);
                 showToast(`✅ AWB Generated: ${awbNumber}`, 'success');
                 fetchPendingRequests();
 
@@ -196,9 +190,8 @@ export default function OperationsPage({ onViewInquiry }) {
     const fetchPendingUsers = async () => {
         try {
             setLoadingUsers(true);
-            const { data, error } = await supabase.rpc('get_pending_users');
-            if (error) throw error;
-            setPendingUsers(data || []);
+            const data = await userService.getPendingUsers();
+            setPendingUsers(data);
         } catch (error) {
             console.error('Error fetching pending users:', error);
         } finally {
@@ -218,13 +211,8 @@ export default function OperationsPage({ onViewInquiry }) {
         showConfirm('Approve User?', `Approve ${email} with initials ${initials}?`, async () => {
             try {
                 setLoading(true);
-                const { error } = await supabase.rpc('approve_user', {
-                    p_user_id: userId,
-                    p_initials: initials.toUpperCase(),
-                    p_approved_by: user.id
-                });
+                await userService.approveUser(userId, initials, user.id);
 
-                if (error) throw error;
                 showToast(`✅ User ${email} approved!`, 'success');
                 fetchPendingUsers();
                 setUserInitials(prev => {
@@ -246,10 +234,7 @@ export default function OperationsPage({ onViewInquiry }) {
         showConfirm('Reject User?', `Reject and delete ${email}? Cannot be undone.`, async () => {
             try {
                 setLoading(true);
-                const { error } = await supabase.rpc('reject_user', {
-                    p_user_id: userId
-                });
-                if (error) throw error;
+                await userService.rejectUser(userId);
                 showToast(`User ${email} rejected.`, 'info');
                 fetchPendingUsers();
             } catch (error) {
@@ -267,10 +252,8 @@ export default function OperationsPage({ onViewInquiry }) {
     const fetchPendingCommissions = async () => {
         try {
             setLoadingCommissions(true);
-            const { data, error } = await supabase.rpc('get_pending_commissions');
-
-            if (error) throw error;
-            setPendingCommissions(data || []);
+            const data = await commissionService.getPendingCommissionsList();
+            setPendingCommissions(data);
         } catch (error) {
             console.error('Error fetching pending commissions:', error);
         } finally {
@@ -292,12 +275,7 @@ export default function OperationsPage({ onViewInquiry }) {
         showConfirm('Approve Commission?', `Approve ${formatCurrency(amount)} for ${salesName}?`, async () => {
             try {
                 setLoading(true);
-                const { error } = await supabase.rpc('approve_commission', {
-                    p_inquiry_id: inquiryId,
-                    p_approved_by: user.id,
-                    p_commission_amount: parseFloat(amount)
-                });
-                if (error) throw error;
+                await commissionService.approve(inquiryId, user.id, parseFloat(amount));
                 showToast('✅ Commission Approved!', 'success');
                 fetchPendingCommissions();
             } catch (error) {
@@ -309,13 +287,42 @@ export default function OperationsPage({ onViewInquiry }) {
         });
     };
 
+    // Fetch approved commissions (ready to pay)
+    const fetchApprovedCommissions = async () => {
+        try {
+            setLoadingApproved(true);
+            const data = await commissionService.getApprovedCommissionsList();
+            setApprovedCommissions(data);
+        } catch (error) {
+            console.error('Error fetching approved commissions:', error);
+        } finally {
+            setLoadingApproved(false);
+        }
+    };
+
+    // Mark as Paid
+    const handleMarkAsPaid = (inquiryId, salesName, amount) => {
+        showConfirm('Mark as Paid?', `Confirm payment of ${formatCurrency(amount)} to ${salesName}?`, async () => {
+            try {
+                setLoading(true);
+                await commissionService.markAsPaid(inquiryId);
+                showToast('💰 Commission Marked as Paid!', 'success');
+                fetchApprovedCommissions();
+            } catch (error) {
+                console.error('Error marking as paid:', error);
+                showToast(`❌ Failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    };
+
     // Fetch pending quotes
     const fetchPendingQuotes = async () => {
         try {
             setLoadingQuotes(true);
-            const { data, error } = await supabase.rpc('get_pending_quotes');
-            if (error) throw error;
-            setPendingQuotes(data || []);
+            const data = await inquiryService.getPendingQuotes();
+            setPendingQuotes(data);
         } catch (error) {
             console.error('Error fetching quotes:', error);
         } finally {
@@ -327,7 +334,11 @@ export default function OperationsPage({ onViewInquiry }) {
     const handleApproveQuote = (inquiryId, customerName, revenue, gp) => {
         // Validate
         if (!revenue || revenue <= 0) {
-            showToast('⚠️ Please enter valid Revenue before approving', 'error');
+            showToast('⚠️ REVENUE KOSONG! Isi Revenue & GP di tabel dulu sebelum klik Approve', 'error');
+            return;
+        }
+        if (!gp || gp <= 0) {
+            showToast('⚠️ GP KOSONG! Isi GP di tabel dulu sebelum klik Approve', 'error');
             return;
         }
 
@@ -341,13 +352,7 @@ export default function OperationsPage({ onViewInquiry }) {
 
             try {
                 setLoading(true);
-                const { error } = await supabase.rpc('approve_quote', {
-                    p_inquiry_id: inquiryId,
-                    p_approved_by: user.id,
-                    p_revenue: parseFloat(revenue),
-                    p_gp: parseFloat(gp || 0)
-                });
-                if (error) throw error;
+                await inquiryService.approveQuote(inquiryId, user.id, revenue, gp);
                 showToast('✅ Quotation Approved & Updated!', 'success');
                 fetchPendingQuotes();
             } catch (error) {
@@ -364,13 +369,6 @@ export default function OperationsPage({ onViewInquiry }) {
         showConfirm('Reject Quote?', `Reject quotation for ${customerName}?`, async () => {
             try {
                 setLoading(true);
-                const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
-                if (error) throw error;
-                showToast('⚠️ Quotation Rejected', 'info');
-                fetchPendingQuotes();
-            } catch (error) {
-                console.error('Error rejecting quote:', error);
-                showToast(`❌ Failed: ${error.message}`, 'error');
             } finally {
                 setLoading(false);
             }
@@ -493,7 +491,7 @@ export default function OperationsPage({ onViewInquiry }) {
                                         <td className="px-4 py-3 text-sm">
                                             <button
                                                 onClick={() => handleViewDetails(comm.inquiry_id)}
-                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs shadow-sm"
+                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs shadow-sm mr-2"
                                                 title="View Details"
                                             >
                                                 🔍 View
@@ -504,6 +502,50 @@ export default function OperationsPage({ onViewInquiry }) {
                                                 className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 text-xs shadow-sm shadow-yellow-900/50"
                                             >
                                                 ✓ Approve
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Approved Commissions (Ready to Pay) Section */}
+            <div className="card mb-6 border-l-4 border-green-500 bg-secondary-800/80">
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">✅ Approved Commissions (Ready to Pay)</h2>
+
+                {loadingApproved ? (
+                    <p className="text-gray-500">Loading approved commissions...</p>
+                ) : approvedCommissions.length === 0 ? (
+                    <p className="text-gray-500">No approved commissions waiting for payment</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales Rep</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Comm Amount</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Approved Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-700">
+                                {approvedCommissions.map((comm) => (
+                                    <tr key={comm.inquiry_id} className="hover:bg-secondary-700/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-200">{comm.sales_rep}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-400">{comm.customer_name}</td>
+                                        <td className="px-4 py-3 text-sm text-green-400 font-mono font-bold">{formatCurrency(comm.est_commission)}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(comm.created_at)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <button
+                                                onClick={() => handleMarkAsPaid(comm.inquiry_id, comm.sales_rep, comm.est_commission)}
+                                                disabled={loading}
+                                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-xs shadow-sm shadow-green-900/50"
+                                            >
+                                                💸 Mark as Paid
                                             </button>
                                         </td>
                                     </tr>

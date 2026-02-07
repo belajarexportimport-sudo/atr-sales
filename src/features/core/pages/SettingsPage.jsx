@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
+import { supabase } from '../../../lib/supabase';
 
 export default function SettingsPage() {
     const { user, profile } = useAuth();

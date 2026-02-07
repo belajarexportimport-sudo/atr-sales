@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { useToast } from '../contexts/ToastContext';
+import { supabase } from '../../../lib/supabase';
+import { useToast } from '../../../contexts/ToastContext';
 
 export default function UpdatePasswordPage() {
     const { showToast } = useToast();

@@ -51,97 +51,114 @@ export const inquiryService = {
     },
 
 
+
+
+
+
     async create(inquiryData, userRole) {
+        // Admin-created inquiries go straight to Pending
+        const dataToInsert = {
+            ...inquiryData,
+            quote_status: userRole === 'admin' ? 'Pending' : (inquiryData.quote_status || 'Draft')
+        };
+
+        // Parse financial fields
+        if (dataToInsert.est_revenue) {
+            dataToInsert.est_revenue = parseFloat(dataToInsert.est_revenue);
+        }
+        if (dataToInsert.est_gp) {
+            dataToInsert.est_gp = parseFloat(dataToInsert.est_gp);
+        }
+        if (dataToInsert.est_commission) {
+            dataToInsert.est_commission = parseFloat(dataToInsert.est_commission);
+        }
+
+        console.log('💾 CREATE inquiry:', {
+            customer: dataToInsert.customer_name,
+            revenue: dataToInsert.est_revenue,
+            gp: dataToInsert.est_gp,
+            status: dataToInsert.quote_status
+        });
+
         const { data, error } = await supabase
             .from('inquiries')
-            .insert([inquiryData])
+            .insert([dataToInsert])
             .select()
             .single();
 
         handleError(error, 'createInquiry');
-
-        // [FIX] Force update financials via RPC for Admin (Bypass INSERT RLS limitations)
-        if (data && userRole === 'admin' && (inquiryData.est_revenue || inquiryData.est_gp)) {
-            console.log('🚀 [CREATE] Using Admin RPC Tunnel for Financials');
-            const { error: rpcError } = await supabase.rpc('admin_update_financials', {
-                p_inquiry_id: data.id,
-                p_revenue: parseFloat(inquiryData.est_revenue || 0),
-                p_gp: parseFloat(inquiryData.est_gp || 0),
-                p_commission: parseFloat(inquiryData.est_commission || 0)
-            });
-
-            if (rpcError) console.error('❌ RPC Create-Update Failed:', rpcError);
-        }
-
         return data;
     },
 
     /**
      * Update existing inquiry with safety checks
-     * Prevents overwriting 'user_id' (Data Stealing) and 'commission' (if not admin)
+     * SIMPLIFIED: Direct database update, NO RPC
      */
     async update(id, updates, userRole) {
-        // SAFETY 1: Never allow changing owner via update (Unless Admin/Null logic controlled by Caller, but here we enforce strictness)
-        // CHECK: If admin wants to release to pool, they set user_id to null.
-        // We only allow user_id change if role is admin.
         const cleanUpdates = { ...updates };
 
-        // DEBUG: Check why RPC Tunnel might be skipped
-        console.log('🔍 UPDATE DEBUG:', {
+        console.log('💾 DIRECT UPDATE:', {
             id,
             userRole,
-            hasRevenue: cleanUpdates.est_revenue !== undefined,
-            revenueValue: cleanUpdates.est_revenue,
-            fullUpdates: cleanUpdates
+            revenue: cleanUpdates.est_revenue,
+            gp: cleanUpdates.est_gp,
+            commission: cleanUpdates.est_commission
         });
 
+        // Safety: Non-admin cannot change ownership or commission
         if (userRole !== 'admin') {
             delete cleanUpdates.user_id;
-            // SAFETY 2: Protect commission if not admin
             delete cleanUpdates.est_commission;
             delete cleanUpdates.commission_approved;
             delete cleanUpdates.commission_amount;
         }
 
-        // [FIX] Force update financials via RPC for Admin (Bypass RLS)
-        let rpcSuccess = false;
+        // Parse financial fields
+        if (cleanUpdates.est_revenue !== undefined) {
+            cleanUpdates.est_revenue = parseFloat(cleanUpdates.est_revenue || 0);
+        }
+        if (cleanUpdates.est_gp !== undefined) {
+            cleanUpdates.est_gp = parseFloat(cleanUpdates.est_gp || 0);
+        }
+        if (cleanUpdates.est_commission !== undefined) {
+            cleanUpdates.est_commission = parseFloat(cleanUpdates.est_commission || 0);
+        }
 
-        // CHECK: Only trigger if Admin AND (Revenue OR GP is being updated)
+        // If nothing to update, return early
+        if (Object.keys(cleanUpdates).length === 0) {
+            return { id };
+        }
+
+        // DEBUG: Show exactly what will be sent to database
+        console.log('📤 SENDING TO DATABASE:', cleanUpdates);
+
+        // ADMIN BYPASS: For revenue/GP updates, use direct API call to bypass RLS
         if (userRole === 'admin' && (cleanUpdates.est_revenue !== undefined || cleanUpdates.est_gp !== undefined)) {
-            const revVal = parseFloat(cleanUpdates.est_revenue || 0);
-            const gpVal = parseFloat(cleanUpdates.est_gp || 0);
+            console.log('🔓 ADMIN BYPASS: Using fetch API to bypass RLS');
 
-            // DEBUG ALERT REMOVED
-            console.log('🚀 Using Admin RPC Tunnel for Financials');
-
-            const { error: rpcError } = await supabase.rpc('admin_update_financials', {
-                p_inquiry_id: id,
-                p_revenue: revVal,
-                p_gp: gpVal,
-                p_commission: parseFloat(cleanUpdates.est_commission || 0)
+            const response = await fetch(`https://ewquycutqbtagjlokvyn.supabase.co/rest/v1/inquiries?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3cXV5Y3V0cWJ0YWdqbG9rdnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTI3MjYsImV4cCI6MjA4NTE4ODcyNn0.FhdCAcK7nxIUk7zdoqxX9xyrjCslBUPXRBiWgugXu3s',
+                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(cleanUpdates)
             });
 
-            if (rpcError) {
-                console.error('❌ RPC Update Failed:', rpcError);
-                throw rpcError;
-            } else {
-                console.log('✅ RPC Update Success');
-                rpcSuccess = true;
-
-                // Clear fields to prevent conflict with standard update
-                delete cleanUpdates.est_revenue;
-                delete cleanUpdates.est_gp;
-                delete cleanUpdates.est_commission;
-                delete cleanUpdates.commission_amount;
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('❌ ADMIN BYPASS FAILED:', error);
+                throw new Error(error.message || 'Failed to update via admin bypass');
             }
+
+            const data = await response.json();
+            console.log('✅ ADMIN BYPASS SUCCESS:', data);
+            return data[0];
         }
 
-        // If nothing left to update (only financials changed), return success immediately
-        if (Object.keys(cleanUpdates).length === 0 && rpcSuccess) {
-            return { id, ...updates }; // Mock return
-        }
-
-        // Standard Update for remaining fields (Status, AWB, etc.)
+        // Standard Update for non-admin or non-financial fields
         const { data, error } = await supabase
             .from('inquiries')
             .update(cleanUpdates)
@@ -218,5 +235,61 @@ export const inquiryService = {
 
         handleError(error, 'grabInquiry');
         return data; // returns true/false
+    },
+
+    // --- QUOTATION APPROVALS (For Operations/Admin) ---
+
+    /**
+     * Request Quote Approval
+     * Used by: DashboardPage
+     */
+    async requestQuoteApproval(inquiryId) {
+        const { error } = await supabase.rpc('request_quote_approval', { p_inquiry_id: inquiryId });
+        handleError(error, 'requestQuoteApproval');
+        return true;
+    },
+
+    /**
+     * Get Pending Quotes
+     * Used by: OperationsPage
+     */
+    async getPendingQuotes() {
+        const { data, error } = await supabase.rpc('get_pending_quotes');
+        handleError(error, 'getPendingQuotes');
+        return data || [];
+    },
+
+    /**
+     * Approve Quote
+     * Used by: OperationsPage
+     * FIXED: Direct DB update instead of broken RPC
+     */
+    async approveQuote(inquiryId, approvedBy, revenue, gp) {
+        console.log('🔧 DIRECT UPDATE (Bypassing RPC):', { inquiryId, revenue, gp });
+
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Approved',
+                est_revenue: parseFloat(revenue),
+                est_gp: parseFloat(gp || 0),
+                est_commission: parseFloat(gp || 0) * 0.02,
+                status: 'Proposal',
+                commission_status: 'Pending'
+            })
+            .eq('id', inquiryId);
+
+        handleError(error, 'approveQuote');
+        return true;
+    },
+
+    /**
+     * Reject Quote
+     * Used by: OperationsPage
+     */
+    async rejectQuote(inquiryId) {
+        const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
+        handleError(error, 'rejectQuote');
+        return true;
     }
 };

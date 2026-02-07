@@ -32,5 +32,31 @@ export const userService = {
             return [];
         }
         return data || [];
+    },
+
+    /**
+     * Approve User
+     * Used by: OperationsPage
+     */
+    async approveUser(userId, initials, approvedBy) {
+        const { error } = await supabase.rpc('approve_user', {
+            p_user_id: userId,
+            p_initials: initials.toUpperCase(),
+            p_approved_by: approvedBy
+        });
+        handleError(error, 'approveUser');
+        return true;
+    },
+
+    /**
+     * Reject User
+     * Used by: OperationsPage
+     */
+    async rejectUser(userId) {
+        const { error } = await supabase.rpc('reject_user', {
+            p_user_id: userId
+        });
+        handleError(error, 'rejectUser');
+        return true;
     }
 };

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATR Sales PWA - Detailed Architecture Map</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            color: #333;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 5px solid #007bff;
+            padding-left: 10px;
+        }
+
+        .mermaid {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hybrid-box {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+    <h1>Strategy: Complex UPS/FedEx Calculator</h1>
+    <p>Menjawab: <em>"Bagaimana struktur Data Zip Code, Zone, dan API UPS?"</em></p>
+
+    <div class="mermaid">
+        flowchart TD
+        User[Sales Input Zip Code] --> Logic[Calculator Logic]
+
+        subgraph "Hybrid Strategy"
+        Logic -->|1. Cek Zone| DB_Zone[(DB: Zip Chart)]
+        Logic -->|2. Cek Base Rate| DB_Rate[(DB: Contract Rates)]
+        Logic -->|3. Cek Fuel Surcharge| DB_Fuel[(DB/API: Fuel %)]
+        end
+
+        Logic -->|4. Hitung Total| Result[Final Selling Price]
+    </div>
+
+    <h2>Rekomendasi: HYBRID MODEL</h2>
+    <div class="hybrid-box">
+        <strong>Mengapa tidak Full API?</strong>
+        <p>API resmi UPS/FedEx biasanya memberikan "Public Rate" (Mahal). Anda sebagai forwarder pasti punya
+            <strong>Contract Rate</strong> (Diskon Besar) yang tidak muncul di API umum. Jadi, Rate harus kita simpan
+            sendiri.</p>
+
+        <strong>Struktur Data (Supabase):</strong>
+        <ol>
+            <li><strong>Tabel <code>ups_zones</code></strong>: Database ribuan Zip Code. (Zip 10001 = Zone 2).
+                <br><em>*Bisa di-inject/import CSV oleh IT Team sekali saja.</em>
+            </li>
+            <li><strong>Tabel <code>ups_base_rates</code></strong>: Harga Contract Anda. (Zone 2, 5kg = $40).</li>
+            <li><strong>Tabel <code>surcharges</code></strong>: Fuel Surcharge mingguan (misal 15%).</li>
+        </ol>
+
+        <strong>Cara Kerja Hybrid:</strong>
+        <p>Aplikasi tidak perlu koneksi ke server UPS (lambat & mahal). Aplikasi cukup hitung lokal dari Database kita.
+            Cepat & Akurat sesuai harga modal Anda.</p>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { formatDate } from '../lib/utils';
+import { trackingService } from '../../../services/trackingService';
+import { formatDate } from '../../../lib/utils';
 
 export default function TrackingPage() {
     const [awb, setAwb] = useState('');
@@ -17,21 +17,13 @@ export default function TrackingPage() {
         setTrackingData(null);
 
         try {
-            // 1. Fetch Internal Tracking Events
-            const cleanAwb = awb.trim();
-            console.log('Searching for AWB (trimmed):', cleanAwb);
-            const { data, error } = await supabase
-                .from('tracking_events')
-                .select('*')
-                .eq('awb_number', cleanAwb)
-                .order('occurred_at', { ascending: false });
-
-            console.log('Fetch Result:', data, error);
-
-            if (error) throw error;
+            console.log('Searching for AWB (trimmed):', awb);
+            const data = await trackingService.getHistory(awb);
+            console.log('Fetch Result:', data);
             setTrackingData(data);
         } catch (error) {
             console.error('Error fetching tracking:', error);
+            // Optional: User feedback handled by UI state
         } finally {
             setLoading(false);
         }
@@ -160,7 +152,7 @@ function DebugRecentEvents() {
     const [show, setShow] = useState(false);
 
     const loadEvents = async () => {
-        const { data } = await supabase.from('tracking_events').select('*').limit(5).order('created_at', { ascending: false });
+        const data = await trackingService.getRecentEventsDebug();
         setEvents(data || []);
         setShow(true);
     };

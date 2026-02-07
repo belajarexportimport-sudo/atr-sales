@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
-import { useModal } from '../contexts/ModalContext'; // Import Modal
-import { calculateCommission, formatCurrency } from '../lib/utils';
-import { inquiryService } from '../services/inquiryService';
-import { commissionService } from '../services/commissionService';
-import { leadService } from '../services/leadService';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
+import { useModal } from '../../../contexts/ModalContext'; // Import Modal
+import { calculateCommission, formatCurrency } from '../../../lib/utils';
+import { inquiryService } from '../../../services/inquiryService';
+import { commissionService } from '../../../services/commissionService';
+import { leadService } from '../../../services/leadService';
+import { supabase } from '../../../lib/supabase';
 
 export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
     const { user, profile } = useAuth();
@@ -225,11 +226,27 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
             console.log('🚀 DEBUG: Submitting Inquiry Payload:', inquiryData); // ADDED FOR DEBUGGING
 
             if (inquiry?.id) {
-                // DEBUG: Verify Role before sending
-                // alert(`DEBUG COMPONENT:\nRole: ${profile?.role}\nRevenue: ${inquiryData.est_revenue}`);
-                console.log('🚀 Call Service Update:', inquiryData);
+                console.log('🚀 UPDATE MODE - Direct API Call');
 
-                await inquiryService.update(inquiry.id, inquiryData, profile?.role);
+                // DIRECT UPDATE via fetch API (bypass all cache)
+                const response = await fetch(`https://ewquycutqbtagjlokvyn.supabase.co/rest/v1/inquiries?id=eq.${inquiry.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3cXV5Y3V0cWJ0YWdqbG9rdnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTI3MjYsImV4cCI6MjA4NTE4ODcyNn0.FhdCAcK7nxIUk7zdoqxX9xyrjCslBUPXRBiWgugXu3s',
+                        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(inquiryData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to update inquiry');
+                }
+
+                const result = await response.json();
+                console.log('✅ DIRECT UPDATE SUCCESS:', result);
             } else {
                 await inquiryService.create(inquiryData, profile?.role);
             }

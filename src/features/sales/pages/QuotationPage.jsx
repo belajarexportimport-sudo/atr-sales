@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate } from '../../../lib/utils';
 
 export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
     if (!inquiry) return <div className="p-8 text-center">No inquiry data found for quotation.</div>;

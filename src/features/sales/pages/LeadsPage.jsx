@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { formatDate, getLeadStatusColor } from '../lib/utils';
-import LeadFormModal from '../components/LeadFormModal';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import { formatDate, getLeadStatusColor } from '../../../lib/utils';
+import LeadFormModal from '../../../components/LeadFormModal';
 
-import { useToast } from '../contexts/ToastContext';
-import { useModal } from '../contexts/ModalContext';
+import { useToast } from '../../../contexts/ToastContext';
+import { useModal } from '../../../contexts/ModalContext';
 
 export default function LeadsPage({ onCreateRFQ }) {
     const { user } = useAuth();

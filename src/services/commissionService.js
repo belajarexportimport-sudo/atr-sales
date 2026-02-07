@@ -58,5 +58,59 @@ export const commissionService = {
             return [];
         }
         return data || [];
+    },
+
+    /**
+     * Get Approved (Unpaid) Commissions
+     * For Admin Payment View
+     */
+    async getApprovedCommissionsList() {
+        try {
+            const { data, error } = await supabase
+                .from('inquiries')
+                .select(`
+                    id,
+                    est_revenue, 
+                    est_gp, 
+                    commission_amount, 
+                    created_at, 
+                    customer_name,
+                    user_id
+                `)
+                .eq('commission_status', 'Approved')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching approved commissions:', error);
+                return [];
+            }
+
+            // Return simplified data without profile join (avoid RLS issues)
+            return (data || []).map(item => ({
+                inquiry_id: item.id,
+                sales_rep: 'Sales', // Simplified - can enhance later
+                customer_name: item.customer_name,
+                est_revenue: item.est_revenue,
+                est_gp: item.est_gp,
+                est_commission: item.commission_amount,
+                created_at: item.created_at
+            }));
+        } catch (err) {
+            console.error('Exception in getApprovedCommissionsList:', err);
+            return [];
+        }
+    },
+
+    /**
+     * Mark Commission as Paid
+     */
+    async markAsPaid(inquiryId) {
+        const { error } = await supabase
+            .from('inquiries')
+            .update({ commission_status: 'Paid' })
+            .eq('id', inquiryId);
+
+        handleError(error, 'markAsPaid');
+        return true;
     }
 };

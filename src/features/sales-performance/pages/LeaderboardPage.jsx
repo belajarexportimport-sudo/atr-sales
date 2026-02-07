@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { inquiryService } from '../services/inquiryService';
-import { userService } from '../services/userService';
-import { formatCurrency } from '../lib/utils'; // Assumed utils exist
+import { inquiryService } from '../../../services/inquiryService';
+import { userService } from '../../../services/userService';
+import { formatCurrency } from '../../../lib/utils'; // Assumed utils exist
 
 export default function LeaderboardPage() {
     const [rankings, setRankings] = useState([]);

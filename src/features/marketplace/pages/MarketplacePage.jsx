@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { inquiryService } from '../services/inquiryService';
-import { useToast } from '../contexts/ToastContext';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
+import { inquiryService } from '../../../services/inquiryService';
+import { useToast } from '../../../contexts/ToastContext';
+import { formatCurrency, formatDate } from '../../../lib/utils';
 
 export default function MarketplacePage() {
     const { user, profile } = useAuth();
@@ -111,8 +111,8 @@ export default function MarketplacePage() {
                                 onClick={() => handleGrab(lead)}
                                 disabled={grabbingId === lead.id}
                                 className={`w-full py-3 rounded-lg font-bold text-center transition-all transform active:scale-95 ${grabbingId === lead.id
-                                        ? 'bg-gray-700 text-gray-400 cursor-wait'
-                                        : 'bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-900/50 hover:shadow-primary-500/30'
+                                    ? 'bg-gray-700 text-gray-400 cursor-wait'
+                                    : 'bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-900/50 hover:shadow-primary-500/30'
                                     }`}
                             >
                                 {grabbingId === lead.id ? 'Attacking... 🦈' : 'GRAB THIS LEAD ⚡'}
