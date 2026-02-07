@@ -490,15 +490,18 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 <div>
                     <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Financial Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="label">Est. Revenue (IDR)</label>
-                            <input type="number" name="est_revenue" className="input-field" placeholder="1000000" value={formData.est_revenue} onChange={handleChange} step="1000" />
-                        </div>
+                        {/* ADMIN ONLY: Revenue & GP */}
                         {profile?.role === 'admin' && (
-                            <div>
-                                <label className="label">Est. GP (IDR)</label>
-                                <input type="number" name="est_gp" className="input-field" placeholder="200000" value={formData.est_gp} onChange={handleChange} step="1000" />
-                            </div>
+                            <>
+                                <div>
+                                    <label className="label">Est. Revenue (IDR)</label>
+                                    <input type="number" name="est_revenue" className="input-field" placeholder="1000000" value={formData.est_revenue} onChange={handleChange} step="1000" />
+                                </div>
+                                <div>
+                                    <label className="label">Est. GP (IDR)</label>
+                                    <input type="number" name="est_gp" className="input-field" placeholder="200000" value={formData.est_gp} onChange={handleChange} step="1000" />
+                                </div>
+                            </>
                         )}
                         <div className="relative">
                             <label className="label flex items-center gap-2">
