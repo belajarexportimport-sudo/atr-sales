@@ -290,10 +290,24 @@ export const inquiryService = {
     /**
      * Request Quote Approval
      * Used by: DashboardPage
+     * FIXED: Direct UPDATE instead of broken RPC
      */
     async requestQuoteApproval(inquiryId) {
-        const { error } = await supabase.rpc('request_quote_approval', { p_inquiry_id: inquiryId });
-        handleError(error, 'requestQuoteApproval');
+        console.log('📤 Requesting quote approval for:', inquiryId);
+
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Pending'
+            })
+            .eq('id', inquiryId);
+
+        if (error) {
+            console.error('❌ Failed to request approval:', error);
+            handleError(error, 'requestQuoteApproval');
+        }
+
+        console.log('✅ Quote approval requested');
         return true;
     },
 
