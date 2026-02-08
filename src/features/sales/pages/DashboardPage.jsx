@@ -109,8 +109,11 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
     };
 
     const handleRequestApproval = (inquiryId) => {
+        console.log('🖐️ Request Approval clicked for inquiry:', inquiryId);
+
         showConfirm('Request Approval?', 'Submit this quotation for Admin approval? Check margin/GP first.', async () => {
             try {
+                console.log('📤 Sending approval request...');
                 await inquiryService.requestQuoteApproval(inquiryId);
                 showToast('🚀 Quote Approval Requested!', 'success');
                 fetchDashboardData();
@@ -471,8 +474,9 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                                                 {inquiry.quote_status === 'Draft' && (
                                                     <button
                                                         onClick={() => handleRequestApproval(inquiry.id)}
-                                                        className="text-yellow-400 hover:text-yellow-300 transition-colors text-xs border border-yellow-600 px-2 py-0.5 rounded"
-                                                        title="Request Approval">
+                                                        className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20 transition-all text-xs border border-yellow-600 px-2 py-0.5 rounded cursor-pointer pointer-events-auto"
+                                                        title="Request Approval"
+                                                        type="button">
                                                         ✋ Request
                                                     </button>
                                                 )}
