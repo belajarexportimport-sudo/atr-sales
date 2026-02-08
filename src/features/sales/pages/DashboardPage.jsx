@@ -17,7 +17,9 @@ import AWBPrint from '../../../components/AWBPrint';
 import AdminQuickEdit from '../../operations/components/AdminQuickEdit';
 
 export default function DashboardPage({ onEditInquiry, onQuote }) {
-    const { user, profile } = useAuth(); // FIXED: Missing destructuring
+    const { user, profile } = useAuth();
+    const { showToast } = useToast();
+    const { showConfirm } = useModal();
     // ... (existing state)
     const [printingAWB, setPrintingAWB] = useState(null); // NEW: State for AWB Print Modal
 
@@ -137,17 +139,17 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         let filteredData = data;
 
         // Frontend Filtering for Stats (Dynamic)
+        // Use original_user_id to preserve sales attribution
         if (profile?.role === 'admin' && filterId !== 'all') {
-            filteredData = data.filter(inq => inq.user_id === filterId);
+            filteredData = data.filter(inq => inq.original_user_id === filterId);
         } else if (profile?.role !== 'admin') {
-            filteredData = data.filter(inq => inq.user_id === user?.id);
+            filteredData = data.filter(inq => inq.original_user_id === user?.id);
         }
 
         // --- REVENUE CALC ---
-        // REVENUE CALCULATION (SIMPLIFIED - NO APPROVAL NEEDED)
-        // Show ALL revenue immediately after admin fills it
+        // REVENUE CALCULATION - Only count Won/Invoiced/Paid
         const totalRevenue = filteredData
-            .filter(inq => inq.est_revenue && inq.est_revenue > 0)
+            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
         const potentialRevenue = filteredData

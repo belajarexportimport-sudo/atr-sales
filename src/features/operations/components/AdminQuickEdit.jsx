@@ -43,26 +43,30 @@ export default function AdminQuickEdit({ inquiry, onUpdate }) {
         setLoading(true);
 
         try {
-            // Call RPC function to update
-            const { data, error } = await supabase.rpc('admin_update_inquiry_financials', {
-                p_inquiry_id: inquiry.id,
-                p_revenue: formData.revenue ? parseFloat(formData.revenue) : null,
-                p_gp: formData.gp ? parseFloat(formData.gp) : null,
-                p_commission: formData.commission ? parseFloat(formData.commission) : null,
-                p_awb_number: formData.awb || null
-            });
+            // Direct UPDATE with explicit user_id AND original_user_id to prevent overwrite
+            const { error } = await supabase
+                .from('inquiries')
+                .update({
+                    est_revenue: formData.revenue ? parseFloat(formData.revenue) : null,
+                    est_gp: formData.gp ? parseFloat(formData.gp) : null,
+                    est_commission: formData.commission ? parseFloat(formData.commission) : null,
+                    awb_number: formData.awb || null,
+                    user_id: inquiry.user_id, // 👈 CRITICAL: Force preserve current owner
+                    original_user_id: inquiry.original_user_id, // 👈 IMMUTABLE: Never changes for commission tracking
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', inquiry.id);
 
             if (error) throw error;
 
-            if (data?.success) {
-                showToast('Updated successfully!', 'success');
-                setIsEditing(false);
-                if (onUpdate) onUpdate();
-            } else {
-                showToast(data?.message || 'Update failed', 'error');
-            }
+            showToast('✅ Revenue updated successfully!', 'success');
+            setIsEditing(false);
+            if (onUpdate) onUpdate();
+
+            // Force page reload to show updated data
+            setTimeout(() => window.location.reload(), 500);
         } catch (error) {
-            console.error('Error updating:', error);
+            console.error('❌ Error updating:', error);
             showToast(error.message || 'Failed to update', 'error');
         } finally {
             setLoading(false);
