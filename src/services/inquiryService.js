@@ -310,11 +310,26 @@ export const inquiryService = {
     /**
      * Approve Quote
      * Used by: OperationsPage
-     * FIXED: Direct DB update instead of broken RPC
+     * FIXED: Preserve user_id to prevent sales attribution loss
      */
     async approveQuote(inquiryId, approvedBy, revenue, gp) {
-        console.log('🔧 DIRECT UPDATE (Bypassing RPC):', { inquiryId, revenue, gp });
+        console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
 
+        // CRITICAL: Fetch inquiry first to get original user_id
+        const { data: inquiry, error: fetchError } = await supabase
+            .from('inquiries')
+            .select('user_id, customer_name')
+            .eq('id', inquiryId)
+            .single();
+
+        if (fetchError) {
+            console.error('❌ Failed to fetch inquiry:', fetchError);
+            throw fetchError;
+        }
+
+        console.log('🔍 Original inquiry user_id:', inquiry.user_id);
+
+        // Update with user_id preservation
         const { error } = await supabase
             .from('inquiries')
             .update({
@@ -323,11 +338,17 @@ export const inquiryService = {
                 est_gp: parseFloat(gp || 0),
                 est_commission: parseFloat(gp || 0) * 0.02,
                 status: 'Proposal',
-                commission_status: 'Pending'
+                commission_status: 'Pending',
+                user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
             })
             .eq('id', inquiryId);
 
-        handleError(error, 'approveQuote');
+        if (error) {
+            console.error('❌ UPDATE error:', error);
+            handleError(error, 'approveQuote');
+        }
+
+        console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
         return true;
     },
 
