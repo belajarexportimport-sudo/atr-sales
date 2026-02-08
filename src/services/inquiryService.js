@@ -361,64 +361,60 @@ export const inquiryService = {
         console.log('✅ Pending quotes:', mappedData?.length || 0);
         return mappedData;
     },
-}));
-
-console.log('✅ Pending quotes:', mappedData?.length || 0);
-return mappedData;
-    },
 
     /**
      * Approve Quote
      * Used by: OperationsPage
      * FIXED: Preserve user_id to prevent sales attribution loss
      */
+
     async approveQuote(inquiryId, approvedBy, revenue, gp) {
-    console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
+        console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
 
-    // CRITICAL: Fetch inquiry first to get original user_id
-    const { data: inquiry, error: fetchError } = await supabase
-        .from('inquiries')
-        .select('user_id, customer_name')
-        .eq('id', inquiryId)
-        .single();
+        // CRITICAL: Fetch inquiry first to get original user_id
+        const { data: inquiry, error: fetchError } = await supabase
+            .from('inquiries')
+            .select('user_id, customer_name')
+            .eq('id', inquiryId)
+            .single();
 
-    if (fetchError) {
-        console.error('❌ Failed to fetch inquiry:', fetchError);
-        throw fetchError;
-    }
+        if (fetchError) {
+            console.error('❌ Failed to fetch inquiry:', fetchError);
+            throw fetchError;
+        }
 
-    console.log('🔍 Original inquiry user_id:', inquiry.user_id);
+        console.log('🔍 Original inquiry user_id:', inquiry.user_id);
 
-    // Update with user_id preservation
-    const { error } = await supabase
-        .from('inquiries')
-        .update({
-            quote_status: 'Approved',
-            est_revenue: parseFloat(revenue),
-            est_gp: parseFloat(gp || 0),
-            est_commission: parseFloat(gp || 0) * 0.02,
-            status: 'Proposal',
-            commission_status: 'Pending',
-            user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
-        })
-        .eq('id', inquiryId);
+        // Update with user_id preservation
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Approved',
+                est_revenue: parseFloat(revenue),
+                est_gp: parseFloat(gp || 0),
+                est_commission: parseFloat(gp || 0) * 0.02,
+                status: 'Proposal',
+                commission_status: 'Pending',
+                user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
+            })
+            .eq('id', inquiryId);
 
-    if (error) {
-        console.error('❌ UPDATE error:', error);
-        handleError(error, 'approveQuote');
-    }
+        if (error) {
+            console.error('❌ UPDATE error:', error);
+            handleError(error, 'approveQuote');
+        }
 
-    console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
-    return true;
-},
+        console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
+        return true;
+    },
 
     /**
      * Reject Quote
      * Used by: OperationsPage
      */
     async rejectQuote(inquiryId) {
-    const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
-    handleError(error, 'rejectQuote');
-    return true;
-}
+        const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
+        handleError(error, 'rejectQuote');
+        return true;
+    }
 };
