@@ -314,10 +314,23 @@ export const inquiryService = {
     /**
      * Get Pending Quotes
      * Used by: OperationsPage
+     * FIXED: Direct SELECT instead of broken RPC
      */
     async getPendingQuotes() {
-        const { data, error } = await supabase.rpc('get_pending_quotes');
-        handleError(error, 'getPendingQuotes');
+        console.log('📋 Fetching pending quotes...');
+
+        const { data, error } = await supabase
+            .from('inquiries')
+            .select('*')
+            .eq('quote_status', 'Pending')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('❌ Failed to fetch pending quotes:', error);
+            handleError(error, 'getPendingQuotes');
+        }
+
+        console.log('✅ Pending quotes:', data?.length || 0);
         return data || [];
     },
 
