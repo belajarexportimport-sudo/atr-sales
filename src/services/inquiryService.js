@@ -317,16 +317,12 @@ export const inquiryService = {
      * FIXED: Direct SELECT instead of broken RPC
      */
     async getPendingQuotes() {
-        console.log('📋 Fetching pending quotes...');
+        console.log('📋 Fetching pending quotes (Manual Join Mode)...');
 
-        const { data, error } = await supabase
+        // 1. Fetch Inquiries ONLY (No Join to avoid 400 Error)
+        const { data: inquiries, error } = await supabase
             .from('inquiries')
-            .select(`
-                *,
-                profiles:user_id (
-                    full_name
-                )
-            `)
+            .select('*')
             .eq('quote_status', 'Pending')
             .order('created_at', { ascending: false });
 
@@ -336,17 +332,39 @@ export const inquiryService = {
             return [];
         }
 
-        // Map Value to match OperationsPage expectation
-        const mappedData = data.map(item => ({
+        // 2. Extract User IDs to fetch profiles manually
+        const userIds = [...new Set(inquiries.map(item => item.user_id).filter(Boolean))];
+        let profileMap = {};
+
+        if (userIds.length > 0) {
+            const { data: profiles, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', userIds);
+
+            if (profiles) {
+                profiles.forEach(p => {
+                    profileMap[p.id] = p.full_name;
+                });
+            }
+        }
+
+        // 3. Map Value to match OperationsPage expectation
+        const mappedData = inquiries.map(item => ({
             ...item,
             inquiry_id: item.id, // CRITICAL: OperationsPage uses inquiry_id
-            sales_rep: item.profiles?.full_name || 'Unknown',
+            sales_rep: profileMap[item.user_id] || 'Unknown',
             origin: item.origin_city || item.origin || '-',
             destination: item.destination_city || item.destination || '-'
         }));
 
         console.log('✅ Pending quotes:', mappedData?.length || 0);
         return mappedData;
+    },
+}));
+
+console.log('✅ Pending quotes:', mappedData?.length || 0);
+return mappedData;
     },
 
     /**
@@ -355,52 +373,52 @@ export const inquiryService = {
      * FIXED: Preserve user_id to prevent sales attribution loss
      */
     async approveQuote(inquiryId, approvedBy, revenue, gp) {
-        console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
+    console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
 
-        // CRITICAL: Fetch inquiry first to get original user_id
-        const { data: inquiry, error: fetchError } = await supabase
-            .from('inquiries')
-            .select('user_id, customer_name')
-            .eq('id', inquiryId)
-            .single();
+    // CRITICAL: Fetch inquiry first to get original user_id
+    const { data: inquiry, error: fetchError } = await supabase
+        .from('inquiries')
+        .select('user_id, customer_name')
+        .eq('id', inquiryId)
+        .single();
 
-        if (fetchError) {
-            console.error('❌ Failed to fetch inquiry:', fetchError);
-            throw fetchError;
-        }
+    if (fetchError) {
+        console.error('❌ Failed to fetch inquiry:', fetchError);
+        throw fetchError;
+    }
 
-        console.log('🔍 Original inquiry user_id:', inquiry.user_id);
+    console.log('🔍 Original inquiry user_id:', inquiry.user_id);
 
-        // Update with user_id preservation
-        const { error } = await supabase
-            .from('inquiries')
-            .update({
-                quote_status: 'Approved',
-                est_revenue: parseFloat(revenue),
-                est_gp: parseFloat(gp || 0),
-                est_commission: parseFloat(gp || 0) * 0.02,
-                status: 'Proposal',
-                commission_status: 'Pending',
-                user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
-            })
-            .eq('id', inquiryId);
+    // Update with user_id preservation
+    const { error } = await supabase
+        .from('inquiries')
+        .update({
+            quote_status: 'Approved',
+            est_revenue: parseFloat(revenue),
+            est_gp: parseFloat(gp || 0),
+            est_commission: parseFloat(gp || 0) * 0.02,
+            status: 'Proposal',
+            commission_status: 'Pending',
+            user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
+        })
+        .eq('id', inquiryId);
 
-        if (error) {
-            console.error('❌ UPDATE error:', error);
-            handleError(error, 'approveQuote');
-        }
+    if (error) {
+        console.error('❌ UPDATE error:', error);
+        handleError(error, 'approveQuote');
+    }
 
-        console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
-        return true;
-    },
+    console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
+    return true;
+},
 
     /**
      * Reject Quote
      * Used by: OperationsPage
      */
     async rejectQuote(inquiryId) {
-        const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
-        handleError(error, 'rejectQuote');
-        return true;
-    }
+    const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
+    handleError(error, 'rejectQuote');
+    return true;
+}
 };
