@@ -321,17 +321,32 @@ export const inquiryService = {
 
         const { data, error } = await supabase
             .from('inquiries')
-            .select('*')
+            .select(`
+                *,
+                profiles:user_id (
+                    full_name
+                )
+            `)
             .eq('quote_status', 'Pending')
             .order('created_at', { ascending: false });
 
         if (error) {
             console.error('❌ Failed to fetch pending quotes:', error);
             handleError(error, 'getPendingQuotes');
+            return [];
         }
 
-        console.log('✅ Pending quotes:', data?.length || 0);
-        return data || [];
+        // Map Value to match OperationsPage expectation
+        const mappedData = data.map(item => ({
+            ...item,
+            inquiry_id: item.id, // CRITICAL: OperationsPage uses inquiry_id
+            sales_rep: item.profiles?.full_name || 'Unknown',
+            origin: item.origin_city || item.origin || '-',
+            destination: item.destination_city || item.destination || '-'
+        }));
+
+        console.log('✅ Pending quotes:', mappedData?.length || 0);
+        return mappedData;
     },
 
     /**
