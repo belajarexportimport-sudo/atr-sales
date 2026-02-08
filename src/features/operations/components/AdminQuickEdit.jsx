@@ -43,7 +43,14 @@ export default function AdminQuickEdit({ inquiry, onUpdate }) {
         setLoading(true);
 
         try {
-            // Direct UPDATE with explicit user_id AND original_user_id to prevent overwrite
+            // Direct UPDATE with explicit user_id to prevent overwrite
+            console.log('🔍 DEBUG AdminQuickEdit:', {
+                inquiryId: inquiry.id,
+                customerName: inquiry.customer_name,
+                currentUserId: inquiry.user_id,
+                willPreserveUserId: inquiry.user_id
+            });
+
             const { error } = await supabase
                 .from('inquiries')
                 .update({
@@ -51,13 +58,17 @@ export default function AdminQuickEdit({ inquiry, onUpdate }) {
                     est_gp: formData.gp ? parseFloat(formData.gp) : null,
                     est_commission: formData.commission ? parseFloat(formData.commission) : null,
                     awb_number: formData.awb || null,
-                    user_id: inquiry.user_id, // 👈 CRITICAL: Force preserve current owner
-                    original_user_id: inquiry.original_user_id, // 👈 IMMUTABLE: Never changes for commission tracking
+                    user_id: inquiry.user_id, // 👈 CRITICAL: Force preserve original owner
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', inquiry.id);
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ UPDATE error:', error);
+                throw error;
+            }
+
+            console.log('✅ UPDATE success - user_id should be preserved');
 
             showToast('✅ Revenue updated successfully!', 'success');
             setIsEditing(false);
