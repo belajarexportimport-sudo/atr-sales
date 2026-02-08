@@ -1,53 +1,36 @@
--- FIX: Infinite Recursion in RLS Policy
--- Problem: UPDATE policy WITH CHECK has subquery causing recursion
--- Solution: Simplify WITH CHECK to not query inquiries table
+-- EMERGENCY FIX: INFINITE RECURSION LOOP
 
--- Step 1: Drop broken policies
-DROP POLICY IF EXISTS "select_inquiries" ON inquiries;
-DROP POLICY IF EXISTS "insert_inquiries" ON inquiries;
-DROP POLICY IF EXISTS "update_inquiries" ON inquiries;
-DROP POLICY IF EXISTS "delete_inquiries" ON inquiries;
+-- 1. Drop the problematic policy immediately
+DROP POLICY IF EXISTS "admin_view_all_profiles" ON profiles;
 
--- Step 2: Create FIXED policies
+-- 2. Create a SAFETY FUNCTION (Security Definer) to break the loop
+-- This function runs with "superuser" privileges checking the table, 
+-- avoiding RLS recursion.
+CREATE OR REPLACE FUNCTION public.check_user_is_admin()
+RETURNS BOOLEAN AS $$
+DECLARE
+  _role text;
+BEGIN
+  SELECT role INTO _role
+  FROM profiles
+  WHERE id = auth.uid();
+  
+  RETURN _role = 'admin';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- SELECT: Admin sees all, users see own
-CREATE POLICY "select_inquiries"
-ON inquiries FOR SELECT
+-- 3. Re-create the policy using the SAFE FUNCTION
+CREATE POLICY "admin_view_all_profiles_safe"
+ON profiles
+FOR SELECT
 TO authenticated
 USING (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-    OR auth.uid() = user_id
-    OR user_id IS NULL
+    -- User sees their own profile
+    id = auth.uid() 
+    OR 
+    -- User is admin (checked safely via function)
+    check_user_is_admin()
 );
 
--- INSERT: Anyone can insert (NO restrictions)
-CREATE POLICY "insert_inquiries"
-ON inquiries FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
--- UPDATE: Admin updates all, users update own
--- FIXED: No subquery in WITH CHECK to avoid recursion
-CREATE POLICY "update_inquiries"
-ON inquiries FOR UPDATE
-TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-    OR auth.uid() = user_id
-)
-WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-    OR auth.uid() = user_id
-);
-
--- DELETE: Admin deletes all, users delete own
-CREATE POLICY "delete_inquiries"
-ON inquiries FOR DELETE
-TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-    OR auth.uid() = user_id
-);
-
--- Verify
-SELECT policyname, cmd FROM pg_policies WHERE tablename = 'inquiries' ORDER BY cmd;
+-- 4. Verify it works by selecting own profile
+SELECT * FROM profiles WHERE id = auth.uid();

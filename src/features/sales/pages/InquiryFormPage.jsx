@@ -36,14 +36,14 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
         shipment_date: '',
         awb_number: '',
         awb_request_id: null,
-        packages: [{ weight: '', dimension: '', type: 'Box', commodity: '' }] // MULTI-COLLIE
+        packages: [{ weight: '', length: '', width: '', height: '', cwt: '', type: 'Box', commodity: '' }] // MULTI-COLLIE
     });
 
     // Helper: Add Package
     const addPackage = () => {
         setFormData(prev => ({
             ...prev,
-            packages: [...prev.packages, { weight: '', dimension: '', type: 'Box', commodity: '' }]
+            packages: [...prev.packages, { weight: '', length: '', width: '', height: '', cwt: '', type: 'Box', commodity: '' }]
         }));
     };
 
@@ -92,11 +92,27 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 : (inquiry.est_commission || 0);
 
             // Backwards compatibility: if inquiry.packages is missing, use weight/dim from root cols
+            // Also parse legacy "dimension" string "10x10x10" -> length, width, height
+            const parseDim = (dimStr) => {
+                if (!dimStr) return { length: '', width: '', height: '' };
+                const parts = dimStr.toLowerCase().split('x');
+                return {
+                    length: parts[0] || '',
+                    width: parts[1] || '',
+                    height: parts[2] || ''
+                };
+            };
+
             const existingPackages = inquiry.packages && inquiry.packages.length > 0
-                ? inquiry.packages
+                ? inquiry.packages.map(p => ({
+                    ...p,
+                    // If new fields missing but dimension exists, parse it
+                    ...(!p.length && p.dimension ? parseDim(p.dimension) : {})
+                }))
                 : [{
                     weight: inquiry.weight || '',
-                    dimension: inquiry.dimension || '',
+                    ...parseDim(inquiry.dimension),
+                    cwt: '', // Default empty for old data
                     type: inquiry.package_type || 'Box',
                     commodity: inquiry.commodity || ''
                 }];
@@ -211,7 +227,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 // Automatically sum weight from packages for root column
                 weight: calculateTotalWeight(),
                 // Use first package dim as primary specific or join them
-                dimension: formData.packages.map(p => p.dimension).join('; '),
+                dimension: formData.packages.map(p => `${p.length || 0}x${p.width || 0}x${p.height || 0}`).join('; '),
                 service_type: formData.service_type || null,
                 est_revenue: formData.est_revenue ? parseFloat(String(formData.est_revenue).replace(/[^0-9.-]+/g, '')) : null,
                 est_gp: formData.est_gp ? parseFloat(String(formData.est_gp).replace(/[^0-9.-]+/g, '')) : null,
@@ -361,13 +377,25 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                     <h3 className="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Shipment Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="label">Origin *</label>
-                                <input type="text" name="origin" className="input-field" placeholder="Jakarta" value={formData.origin} onChange={handleChange} required />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label">Origin City *</label>
+                                    <input type="text" name="origin" className="input-field" placeholder="Jakarta" value={formData.origin} onChange={handleChange} required />
+                                </div>
+                                <div>
+                                    <label className="label">Origin Zip</label>
+                                    <input type="text" name="origin_postal_code" className="input-field" placeholder="12345" value={formData.origin_postal_code || ''} onChange={handleChange} />
+                                </div>
                             </div>
-                            <div>
-                                <label className="label">Destination *</label>
-                                <input type="text" name="destination" className="input-field" placeholder="Singapore" value={formData.destination} onChange={handleChange} required />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div>
+                                    <label className="label">Destination City *</label>
+                                    <input type="text" name="destination" className="input-field" placeholder="Singapore" value={formData.destination} onChange={handleChange} required />
+                                </div>
+                                <div>
+                                    <label className="label">Dest Zip</label>
+                                    <input type="text" name="destination_postal_code" className="input-field" placeholder="54321" value={formData.destination_postal_code || ''} onChange={handleChange} />
+                                </div>
                             </div>
                             <div>
                                 <label className="label">Service Type</label>
@@ -389,39 +417,65 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                         <div className="mt-4 border border-gray-700 rounded-lg p-3 bg-secondary-900/30">
                             <label className="label mb-2 flex justify-between">
                                 <span>📦 Packages ({formData.packages.length} items)</span>
-                                <span className="text-primary-400 text-xs font-normal">Total: {calculateTotalWeight()} kg</span>
+                                <div className="text-right">
+                                    <span className="text-primary-400 text-xs font-normal block">Total Gross: {calculateTotalWeight()} kg</span>
+                                    <span className="text-yellow-500 text-xs font-normal block">Total CWT: {formData.packages.reduce((sum, p) => sum + (parseFloat(p.cwt) || 0), 0)} kg</span>
+                                </div>
                             </label>
 
                             <div className="space-y-3">
                                 {formData.packages.map((pkg, index) => (
                                     <div key={index} className="grid grid-cols-12 gap-2 items-end bg-secondary-800 p-2 rounded relative group">
-                                        <div className="col-span-3">
-                                            <label className="text-[10px] text-gray-500 uppercase">Weight</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    className="input-field py-1 text-sm pr-6"
-                                                    value={pkg.weight}
-                                                    onChange={(e) => handlePackageChange(index, 'weight', e.target.value)}
-                                                />
-                                                <span className="absolute right-2 top-1.5 text-xs text-gray-500">kg</span>
-                                            </div>
-                                        </div>
-                                        <div className="col-span-3">
-                                            <label className="text-[10px] text-gray-500 uppercase">Dim (LxWxH)</label>
+                                        <div className="col-span-2">
+                                            <label className="text-[10px] text-gray-500 uppercase">Gross W (kg)</label>
                                             <input
-                                                type="text"
-                                                placeholder="10x10x10"
-                                                className="input-field py-1 text-sm"
-                                                value={pkg.dimension}
-                                                onChange={(e) => handlePackageChange(index, 'dimension', e.target.value)}
+                                                type="number"
+                                                placeholder="0"
+                                                className="input-field py-1 text-sm px-1"
+                                                value={pkg.weight}
+                                                onChange={(e) => handlePackageChange(index, 'weight', e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-span-3">
+                                        <div className="col-span-4">
+                                            <label className="text-[10px] text-gray-500 uppercase">Dims (L x W x H) cm</label>
+                                            <div className="flex gap-1">
+                                                <input
+                                                    type="number"
+                                                    placeholder="L"
+                                                    className="input-field py-1 text-sm px-1 text-center"
+                                                    value={pkg.length || ''}
+                                                    onChange={(e) => handlePackageChange(index, 'length', e.target.value)}
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="W"
+                                                    className="input-field py-1 text-sm px-1 text-center"
+                                                    value={pkg.width || ''}
+                                                    onChange={(e) => handlePackageChange(index, 'width', e.target.value)}
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="H"
+                                                    className="input-field py-1 text-sm px-1 text-center"
+                                                    value={pkg.height || ''}
+                                                    onChange={(e) => handlePackageChange(index, 'height', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="text-[10px] text-yellow-500 uppercase font-bold">CWT (kg)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Auto"
+                                                className="input-field py-1 text-sm px-1 border-yellow-700 text-yellow-500"
+                                                value={pkg.cwt || ''}
+                                                onChange={(e) => handlePackageChange(index, 'cwt', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-span-2">
                                             <label className="text-[10px] text-gray-500 uppercase">Type</label>
                                             <select
-                                                className="input-field py-1 text-sm"
+                                                className="input-field py-1 text-sm px-1"
                                                 value={pkg.type}
                                                 onChange={(e) => handlePackageChange(index, 'type', e.target.value)}
                                             >
@@ -432,12 +486,12 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                                                 <option>Drum</option>
                                             </select>
                                         </div>
-                                        <div className="col-span-3">
-                                            <label className="text-[10px] text-gray-500 uppercase">Commodity</label>
+                                        <div className="col-span-2">
+                                            <label className="text-[10px] text-gray-500 uppercase">Item</label>
                                             <input
                                                 type="text"
                                                 placeholder="General"
-                                                className="input-field py-1 text-sm"
+                                                className="input-field py-1 text-sm px-1"
                                                 value={pkg.commodity}
                                                 onChange={(e) => handlePackageChange(index, 'commodity', e.target.value)}
                                             />

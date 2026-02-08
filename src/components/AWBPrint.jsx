@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import { formatDate } from '../lib/utils';
 
 export default function AWBPrint({ inquiry, onClose }) {
     const componentRef = useRef();
@@ -30,7 +29,6 @@ export default function AWBPrint({ inquiry, onClose }) {
                     <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                {/* Use text logo if image fails or for simplicity */}
                                 <h1 className="text-4xl font-black tracking-tighter italic">ATR<span className="text-gray-600">EXPRESS</span></h1>
                             </div>
                             <p className="text-sm font-bold uppercase">International Logistics Service</p>
@@ -58,42 +56,94 @@ export default function AWBPrint({ inquiry, onClose }) {
                         {/* Shipper */}
                         <div className="p-4 border-r-2 border-black">
                             <h3 className="text-xs uppercase font-bold text-gray-500 mb-1">From (Shipper)</h3>
-                            <p className="font-bold text-lg">{inquiry.shipper_name || 'N/A'}</p>
+                            <p className="font-bold text-sm uppercase">{inquiry.origin}</p>
+                            {inquiry.origin_postal_code && <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.origin_postal_code}</p>}
+                            <p className="font-bold text-lg mt-2">{inquiry.shipper_name || 'N/A'}</p>
                             <p className="text-sm mt-1 whitespace-pre-line">{inquiry.shipper_address || 'Address not provided'}</p>
                             <p className="text-sm mt-2"><span className="font-bold">Tel:</span> {inquiry.shipper_phone || '-'}</p>
-                            <p className="text-sm"><span className="font-bold">Origin:</span> {inquiry.origin}</p>
                         </div>
 
                         {/* Consignee */}
                         <div className="p-4">
                             <h3 className="text-xs uppercase font-bold text-gray-500 mb-1">To (Consignee)</h3>
-                            <p className="font-bold text-lg">{inquiry.consignee_name || inquiry.customer_name}</p>
+                            <p className="font-bold text-sm uppercase">{inquiry.destination}</p>
+                            {inquiry.destination_postal_code && <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.destination_postal_code}</p>}
+                            <p className="font-bold text-lg mt-2">{inquiry.consignee_name || inquiry.customer_name}</p>
                             <p className="text-sm mt-1 whitespace-pre-line">{inquiry.consignee_address || 'Address not provided'}</p>
                             <p className="text-sm mt-2"><span className="font-bold">Tel:</span> {inquiry.consignee_phone || '-'}</p>
-                            <p className="text-sm"><span className="font-bold">Destination:</span> {inquiry.destination}</p>
                         </div>
                     </div>
 
-                    {/* SHIPMENT DETAILS */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="border-2 border-black p-2">
-                            <span className="block text-xs uppercase font-bold text-gray-500">Weight</span>
-                            <span className="block text-xl font-bold">{inquiry.weight} KG</span>
-                        </div>
-                        <div className="border-2 border-black p-2">
-                            <span className="block text-xs uppercase font-bold text-gray-500">Dimensions</span>
-                            <span className="block text-xl font-bold">{inquiry.dimension || '-'}</span>
-                        </div>
-                        <div className="border-2 border-black p-2">
-                            <span className="block text-xs uppercase font-bold text-gray-500">Pieces</span>
-                            <span className="block text-xl font-bold">{inquiry.pieces || 1}</span>
-                        </div>
-                    </div>
+                    {/* SHIPMENT DETAILS - MULTI COLLIE SUPPORT */}
+                    {inquiry.packages && inquiry.packages.length > 0 ? (
+                        <div className="mb-6">
+                            <table className="w-full border-2 border-black text-xs">
+                                <thead>
+                                    <tr className="border-b-2 border-black bg-gray-100">
+                                        <th className="p-1 border-r border-black text-center w-8">No</th>
+                                        <th className="p-1 border-r border-black text-center">Type</th>
+                                        <th className="p-1 border-r border-black text-center">Dims (L x W x H)</th>
+                                        <th className="p-1 border-r border-black text-center">Gross W</th>
+                                        <th className="p-1 text-center">CWT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {inquiry.packages.map((pkg, idx) => (
+                                        <tr key={idx} className="border-b border-black">
+                                            <td className="p-1 border-r border-black text-center">{idx + 1}</td>
+                                            <td className="p-1 border-r border-black text-center">{pkg.type}</td>
+                                            <td className="p-1 border-r border-black text-center">
+                                                {pkg.length ? `${pkg.length}x${pkg.width}x${pkg.height}` : pkg.dimension}
+                                            </td>
+                                            <td className="p-1 border-r border-black text-center">{pkg.weight} kg</td>
+                                            <td className="p-1 text-center font-bold">
+                                                {pkg.cwt ? `${pkg.cwt} kg` : '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {/* TOTALS ROW */}
+                                    <tr className="bg-gray-200 font-bold">
+                                        <td className="p-1 border-r border-black text-center" colSpan={3}>TOTAL ({inquiry.packages.length} Collies)</td>
+                                        <td className="p-1 border-r border-black text-center">
+                                            {inquiry.packages.reduce((sum, p) => sum + (parseFloat(p.weight) || 0), 0)} kg
+                                        </td>
+                                        <td className="p-1 text-center">
+                                            {inquiry.packages.reduce((sum, p) => sum + (parseFloat(p.cwt) || 0), 0)} kg
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                    <div className="border-2 border-black p-4 mb-6">
-                        <span className="block text-xs uppercase font-bold text-gray-500">Description of Goods / Commodity</span>
-                        <p className="text-lg font-bold uppercase">{inquiry.commodity || 'General Cargo'}</p>
-                    </div>
+                            <div className="border-2 border-t-0 border-black p-2">
+                                <span className="block text-xs uppercase font-bold text-gray-500">Description of Goods / Commodity</span>
+                                <p className="text-sm font-bold uppercase">
+                                    {[...new Set(inquiry.packages.map(p => p.commodity).filter(Boolean))].join(', ') || inquiry.commodity || 'General Cargo'}
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* FALLBACK FOR LEGACY DATA */
+                        <>
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div className="border-2 border-black p-2">
+                                    <span className="block text-xs uppercase font-bold text-gray-500">Weight</span>
+                                    <span className="block text-xl font-bold">{inquiry.weight} KG</span>
+                                </div>
+                                <div className="border-2 border-black p-2">
+                                    <span className="block text-xs uppercase font-bold text-gray-500">Dimensions</span>
+                                    <span className="block text-xl font-bold">{inquiry.dimension || '-'}</span>
+                                </div>
+                                <div className="border-2 border-black p-2">
+                                    <span className="block text-xs uppercase font-bold text-gray-500">Pieces</span>
+                                    <span className="block text-xl font-bold">{inquiry.pieces || 1}</span>
+                                </div>
+                            </div>
+                            <div className="border-2 border-black p-4 mb-6">
+                                <span className="block text-xs uppercase font-bold text-gray-500">Description of Goods / Commodity</span>
+                                <p className="text-lg font-bold uppercase">{inquiry.commodity || 'General Cargo'}</p>
+                            </div>
+                        </>
+                    )}
 
                     {/* FOOTER - SIGNATURES */}
                     <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t-2 border-black border-dashed">
