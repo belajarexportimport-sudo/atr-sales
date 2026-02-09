@@ -35,7 +35,7 @@ export default function AWBPrint({ inquiry, onClose }) {
                         </div>
                         <div className="text-right">
                             <div className="mb-2">
-                                <span className="block text-xs uppercase tracking-widest text-gray-500">Air Waybill Number</span>
+                                <span className="block text-xs uppercase tracking-widest text-gray-500">SLS</span>
                                 <span className="text-3xl font-mono font-bold tracking-widest">{inquiry.awb_number || 'PENDING'}</span>
                             </div>
                             <div className="inline-block bg-black text-white px-2 py-1 text-sm font-bold uppercase">
