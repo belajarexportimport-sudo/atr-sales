@@ -175,6 +175,10 @@ export default function AWBPrint({ inquiry, onClose }) {
                         The shipper certifies that the particulars on the face hereof are correct and that the consignment DOES NOT CONTAIN any dangerous goods.
                     </div>
 
+                    <div className="mt-2 text-center text-xs font-bold text-gray-600">
+                        www.atrexinternational.com
+                    </div>
+
                 </div>
             </div>
         </div>

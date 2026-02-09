@@ -173,6 +173,11 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
                     </div>
                 </div>
 
+                {/* WEBSITE FOOTER */}
+                <div className="mt-8 pt-4 border-t border-gray-200 text-center text-sm font-bold text-primary-800 break-inside-avoid">
+                    www.atrexinternational.com
+                </div>
+
             </div>
         </div>
     );

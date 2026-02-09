@@ -512,6 +512,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                                     <option>Express</option>
                                     <option>Trucking</option>
                                     <option>Warehouse</option>
+                                    <option>DOMESTIC</option>
                                 </select>
                             </div>
                             <div>
