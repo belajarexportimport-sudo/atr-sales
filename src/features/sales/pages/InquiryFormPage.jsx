@@ -246,6 +246,19 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
         showToast('Info copied from Customer/Destination', 'success');
     };
 
+    const handleCopyCustomerToShipper = () => {
+        setFormData(prev => ({
+            ...prev,
+            shipper_name: prev.customer_name,
+            shipper_pic: prev.pic,
+            shipper_phone: prev.phone,
+            shipper_email: prev.email,
+            shipper_city: prev.origin,
+            shipper_postal_code: prev.origin_postal_code
+        }));
+        showToast('Info copied from Customer/Origin', 'success');
+    };
+
     const handleClearShipper = () => {
         setFormData(prev => ({
             ...prev,
@@ -455,6 +468,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 <ShipperForm
                     formData={formData}
                     handleChange={handleChange}
+                    handleCopyFromCustomer={handleCopyCustomerToShipper}
                     handleClear={handleClearShipper}
                 />
 

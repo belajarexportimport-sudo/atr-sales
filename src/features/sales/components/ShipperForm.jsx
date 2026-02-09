@@ -1,17 +1,28 @@
 import React from 'react';
 
-export default function ShipperForm({ formData, handleChange, handleClear }) {
+export default function ShipperForm({ formData, handleChange, handleCopyFromCustomer, handleClear }) {
     return (
         <div className="card space-y-4 border border-gray-700 p-4 rounded-lg bg-gray-800/50">
             <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
                 <h3 className="text-lg font-semibold text-gray-200">📤 Shipper Information (Pengirim)</h3>
-                <button
-                    type="button"
-                    onClick={handleClear}
-                    className="text-xs text-red-400 hover:text-red-300 font-medium px-2 py-1 border border-red-900 rounded bg-red-900/20"
-                >
-                    Clear Shipper
-                </button>
+                <div className="space-x-2">
+                    {handleCopyFromCustomer && (
+                        <button
+                            type="button"
+                            onClick={handleCopyFromCustomer}
+                            className="text-xs text-green-400 hover:text-green-300 font-medium px-2 py-1 border border-green-900 rounded bg-green-900/20"
+                        >
+                            Same as Customer
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleClear}
+                        className="text-xs text-red-400 hover:text-red-300 font-medium px-2 py-1 border border-red-900 rounded bg-red-900/20"
+                    >
+                        Clear
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
