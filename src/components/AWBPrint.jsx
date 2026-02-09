@@ -56,20 +56,28 @@ export default function AWBPrint({ inquiry, onClose }) {
                         {/* Shipper */}
                         <div className="p-4 border-r-2 border-black">
                             <h3 className="text-xs uppercase font-bold text-gray-500 mb-1">From (Shipper)</h3>
-                            <p className="font-bold text-sm uppercase">{inquiry.origin}</p>
-                            {inquiry.origin_postal_code && <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.origin_postal_code}</p>}
-                            <p className="font-bold text-lg mt-2">{inquiry.shipper_name || 'N/A'}</p>
-                            <p className="text-sm mt-1 whitespace-pre-line">{inquiry.shipper_address || 'Address not provided'}</p>
+                            <p className="font-bold text-sm uppercase">{inquiry.shipper_city || inquiry.origin}</p>
+                            {(inquiry.shipper_postal_code || inquiry.origin_postal_code) && (
+                                <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.shipper_postal_code || inquiry.origin_postal_code}</p>
+                            )}
+
+                            <p className="font-bold text-lg mt-2">{inquiry.shipper_name || 'ATR Express (Default)'}</p>
+                            <p className="text-sm mt-1 whitespace-pre-line">{inquiry.shipper_address || inquiry.shipper_addr || 'Address not provided'}</p>
+                            {inquiry.shipper_pic && <p className="text-sm mt-1"><span className="font-bold">PIC:</span> {inquiry.shipper_pic}</p>}
                             <p className="text-sm mt-2"><span className="font-bold">Tel:</span> {inquiry.shipper_phone || '-'}</p>
                         </div>
 
                         {/* Consignee */}
                         <div className="p-4">
                             <h3 className="text-xs uppercase font-bold text-gray-500 mb-1">To (Consignee)</h3>
-                            <p className="font-bold text-sm uppercase">{inquiry.destination}</p>
-                            {inquiry.destination_postal_code && <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.destination_postal_code}</p>}
+                            <p className="font-bold text-sm uppercase">{inquiry.consignee_city || inquiry.destination}</p>
+                            {(inquiry.consignee_postal_code || inquiry.destination_postal_code) && (
+                                <p className="text-xs text-gray-600 font-mono mt-1">ZIP: {inquiry.consignee_postal_code || inquiry.destination_postal_code}</p>
+                            )}
+
                             <p className="font-bold text-lg mt-2">{inquiry.consignee_name || inquiry.customer_name}</p>
                             <p className="text-sm mt-1 whitespace-pre-line">{inquiry.consignee_address || 'Address not provided'}</p>
+                            {inquiry.consignee_pic && <p className="text-sm mt-1"><span className="font-bold">PIC:</span> {inquiry.consignee_pic}</p>}
                             <p className="text-sm mt-2"><span className="font-bold">Tel:</span> {inquiry.consignee_phone || '-'}</p>
                         </div>
                     </div>

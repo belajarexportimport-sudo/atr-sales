@@ -5,8 +5,9 @@ import { useModal } from '../../../contexts/ModalContext'; // Import Modal
 import { calculateCommission, formatCurrency } from '../../../lib/utils';
 import { inquiryService } from '../../../services/inquiryService';
 import { commissionService } from '../../../services/commissionService';
-import { leadService } from '../../../services/leadService';
-import { supabase } from '../../../lib/supabase';
+import { leadService } from '../../../services/leadService'; import { supabase } from '../../../lib/supabase';
+import ShipperForm from '../components/ShipperForm';
+import ConsigneeForm from '../components/ConsigneeForm';
 
 export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
     const { user, profile } = useAuth();
@@ -36,7 +37,23 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
         shipment_date: '',
         awb_number: '',
         awb_request_id: null,
-        packages: [{ weight: '', length: '', width: '', height: '', cwt: '', type: 'Box', commodity: '' }] // MULTI-COLLIE
+        packages: [{ weight: '', length: '', width: '', height: '', cwt: '', type: 'Box', commodity: '' }],
+
+        // Detailed Shipper & Consignee
+        shipper_name: '',
+        shipper_pic: '',
+        shipper_address: '',
+        shipper_city: '',
+        shipper_postal_code: '',
+        shipper_phone: '',
+        shipper_email: '',
+        consignee_name: '',
+        consignee_pic: '',
+        consignee_address: '',
+        consignee_city: '',
+        consignee_postal_code: '',
+        consignee_phone: '',
+        consignee_email: ''
     });
 
     // Helper: Add Package
@@ -137,7 +154,24 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 shipment_date: inquiry.shipment_date || '',
                 awb_number: inquiry.awb_number || '',
                 awb_request_id: inquiry.awb_request_id || null,
-                packages: existingPackages
+                packages: existingPackages,
+
+                // Map DB columns to State
+                shipper_name: inquiry.shipper_name || '',
+                shipper_pic: inquiry.shipper_pic || '',
+                shipper_address: inquiry.shipper_address || '',
+                shipper_city: inquiry.shipper_city || '',
+                shipper_postal_code: inquiry.shipper_postal_code || '',
+                shipper_phone: inquiry.shipper_phone || '',
+                shipper_email: inquiry.shipper_email || '',
+
+                consignee_name: inquiry.consignee_name || '',
+                consignee_pic: inquiry.consignee_pic || '',
+                consignee_address: inquiry.consignee_address || '',
+                consignee_city: inquiry.consignee_city || '',
+                consignee_postal_code: inquiry.consignee_postal_code || '',
+                consignee_phone: inquiry.consignee_phone || '',
+                consignee_email: inquiry.consignee_email || ''
             });
         }
     }, [lead, inquiry]);
@@ -198,6 +232,34 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
         );
     };
 
+    // Handlers for Modular Forms
+    const handleCopyCustomerToConsignee = () => {
+        setFormData(prev => ({
+            ...prev,
+            consignee_name: prev.customer_name,
+            consignee_pic: prev.pic,
+            consignee_phone: prev.phone,
+            consignee_email: prev.email,
+            consignee_city: prev.destination,
+            consignee_postal_code: prev.destination_postal_code
+        }));
+        showToast('Info copied from Customer/Destination', 'success');
+    };
+
+    const handleClearShipper = () => {
+        setFormData(prev => ({
+            ...prev,
+            shipper_name: '', shipper_pic: '', shipper_address: '', shipper_city: '', shipper_postal_code: '', shipper_phone: '', shipper_email: ''
+        }));
+    };
+
+    const handleClearConsignee = () => {
+        setFormData(prev => ({
+            ...prev,
+            consignee_name: '', consignee_pic: '', consignee_address: '', consignee_city: '', consignee_postal_code: '', consignee_phone: '', consignee_email: ''
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -236,7 +298,24 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 status: (profile?.role === 'admin' && isOpenMarket) ? 'UNASSIGNED' : formData.status,
                 shipment_date: formData.shipment_date || null,
                 awb_number: formData.awb_number || null,
-                packages: formData.packages // Save full structure to JSONB
+                packages: formData.packages, // Save full structure to JSONB
+
+                // Detailed Shipper & Consignee
+                shipper_name: formData.shipper_name || null,
+                shipper_pic: formData.shipper_pic || null,
+                shipper_address: formData.shipper_address || null,
+                shipper_city: formData.shipper_city || null,
+                shipper_postal_code: formData.shipper_postal_code || null,
+                shipper_phone: formData.shipper_phone || null,
+                shipper_email: formData.shipper_email || null,
+
+                consignee_name: formData.consignee_name || null,
+                consignee_pic: formData.consignee_pic || null,
+                consignee_address: formData.consignee_address || null,
+                consignee_city: formData.consignee_city || null,
+                consignee_postal_code: formData.consignee_postal_code || null,
+                consignee_phone: formData.consignee_phone || null,
+                consignee_email: formData.consignee_email || null
             };
 
             console.log('🚀 DEBUG: Submitting Inquiry Payload:', inquiryData); // ADDED FOR DEBUGGING
@@ -371,6 +450,20 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Shipper & Consignee Modular Forms */}
+                <ShipperForm
+                    formData={formData}
+                    handleChange={handleChange}
+                    handleClear={handleClearShipper}
+                />
+
+                <ConsigneeForm
+                    formData={formData}
+                    handleChange={handleChange}
+                    handleCopyFromCustomer={handleCopyCustomerToConsignee}
+                    handleClear={handleClearConsignee}
+                />
 
                 {/* Shipment Information */}
                 <div>
