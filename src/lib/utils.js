@@ -81,6 +81,7 @@ export function getStatusColor(status) {
         'Proposal': 'bg-purple-900/50 text-purple-200 border border-purple-800',
         'Negotiation': 'bg-yellow-900/50 text-yellow-200 border border-yellow-800',
         'Won': 'bg-green-900/50 text-green-200 border border-green-800',
+        'Won - Verification at WHS': 'bg-teal-900/50 text-teal-200 border border-teal-800',
         'Lost': 'bg-red-900/50 text-red-200 border border-red-800',
         'Invoiced': 'bg-indigo-900/50 text-indigo-200 border border-indigo-800',
         'Paid': 'bg-emerald-900/50 text-emerald-200 border border-emerald-800',

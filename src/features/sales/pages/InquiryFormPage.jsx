@@ -9,7 +9,7 @@ import { leadService } from '../../../services/leadService'; import { supabase }
 import ShipperForm from '../components/ShipperForm';
 import ConsigneeForm from '../components/ConsigneeForm';
 
-export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
+export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onPrintInvoice }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
     const { showConfirm } = useModal(); // Hook
@@ -455,10 +455,11 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                                 <option>Proposal</option>
                                 <option>Negotiation</option>
                                 <option>Won</option>
+                                <option>Won - Verification at WHS</option>
                                 <option>Lost</option>
-                                <option>Invoiced</option>
-                                <option>Paid</option>
-                                <option>Overdue</option>
+                                {profile?.is_admin && <option>Invoiced</option>}
+                                {profile?.is_admin && <option>Paid</option>}
+                                {profile?.is_admin && <option>Overdue</option>}
                             </select>
                         </div>
                     </div>
@@ -707,7 +708,10 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote }) {
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button type="submit" className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>{loading ? 'Saving...' : '💾 Save Inquiry'}</button>
                     {isEditMode && (
-                        <button type="button" className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors" onClick={() => onQuote && onQuote(inquiry)}>🖨️ Print Quote</button>
+                        <>
+                            <button type="button" className="px-4 py-2 border border-blue-600 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-colors" onClick={() => onQuote && onQuote(inquiry)}>📄 Print Quote</button>
+                            <button type="button" className="px-4 py-2 border border-green-600 text-green-400 rounded-lg hover:bg-green-600 hover:text-white transition-colors" onClick={() => onPrintInvoice && onPrintInvoice(inquiry)}>🧾 Print Invoice</button>
+                        </>
                     )}
                     <button type="button" className="btn-secondary" onClick={() => onSuccess && onSuccess()} disabled={loading}>❌ Cancel</button>
                 </div>
