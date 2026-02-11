@@ -307,8 +307,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                 est_revenue: formData.est_revenue ? parseFloat(String(formData.est_revenue).replace(/[^0-9.-]+/g, '')) : null,
                 est_gp: formData.est_gp ? parseFloat(String(formData.est_gp).replace(/[^0-9.-]+/g, '')) : null,
                 est_commission: formData.est_commission ? parseFloat(String(formData.est_commission).replace(/[^0-9.-]+/g, '')) : 0,
-                // OPEN MARKET LOGIC: If Open Market, Status is UNASSIGNED
-                status: (profile?.role === 'admin' && isOpenMarket) ? 'UNASSIGNED' : formData.status,
+                // OPEN MARKET LOGIC: If Open Market, Status is Profiling (unassigned to user)
+                status: (profile?.role === 'admin' && isOpenMarket) ? 'Profiling' : formData.status,
                 shipment_date: formData.shipment_date || null,
                 awb_number: formData.awb_number || null,
                 packages: formData.packages, // Save full structure to JSONB
