@@ -17,6 +17,7 @@ import QuotationPage from './features/sales/pages/QuotationPage'
 import LeaderboardPage from './features/sales-performance/pages/LeaderboardPage'
 import SettingsPage from './features/core/pages/SettingsPage'
 import InvoicePrint from './features/operations/components/InvoicePrint'; // Import InvoicePrint
+import TawkToChat from './components/TawkToChat'; // Import TawkToChat
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -267,6 +268,9 @@ function AppContent() {
           onClose={() => setPrintingInvoice(null)}
         />
       )}
+
+      {/* Tawk.to Chat Widget (Hidden for Admin) */}
+      <TawkToChat />
     </div>
   );
 }
