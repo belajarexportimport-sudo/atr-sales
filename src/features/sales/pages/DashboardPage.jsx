@@ -14,7 +14,7 @@ import { useModal } from '../../../contexts/ModalContext';
 
 // ... (previous imports)
 import AWBPrint from '../../../components/AWBPrint';
-import AdminQuickEdit from '../../operations/components/AdminQuickEdit';
+// Removed: AdminQuickEdit import - not needed
 
 export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }) {
     const { user, profile } = useAuth();
@@ -430,12 +430,8 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                                             <td className="px-4 py-3 text-sm flex gap-2">
                                                 {/* Removed: Request Approval button - quotation approval no longer needed */}
 
-                                                {/* Admin Quick Edit for AWB/Revenue */}
-                                                {profile?.role === 'admin' ? (
-                                                    <AdminQuickEdit inquiry={inquiry} onUpdate={fetchDashboardData} />
-                                                ) : (
-                                                    <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
-                                                )}
+                                                {/* Edit button for all users */}
+                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
 
                                                 <div className="flex items-center gap-1">
                                                     {/* QUOTE */}
