@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { inquiryService } from '../../../services/inquiryService';
 import { userService } from '../../../services/userService';
 import { formatCurrency } from '../../../lib/utils'; // Assumed utils exist
@@ -15,34 +16,36 @@ export default function LeaderboardPage() {
     const fetchLeaderboardData = async () => {
         try {
             setLoading(true);
-            // Fetch All Inquiries (using 'admin' role context safely or a specific leaderboard endpoint)
-            // Ideally we'd have a specific RPC, but let's re-use existing
-            // Assuming getDashboardData allows fetching all if we pass suitable args or we might need to fetch raw
-            // For now, let's try fetching all active inquiries.
-            // Note: This might be heavy if many records, but for now it's fine.
-            const allInquiries = await inquiryService.getDashboardData('admin', null, 'all');
+
+            // Call RPC function to get aggregated data (bypasses RLS)
+            const { data: leaderboardData, error } = await supabase
+                .rpc('get_leaderboard_data');
+
+            if (error) {
+                console.error('RPC Error:', error);
+                throw error;
+            }
+
             const salesReps = await userService.getAllSalesReps();
 
-            // Aggregation Logic
+            // Map aggregated data to sales reps
             const aggregated = salesReps.map(rep => {
-                const repDeals = allInquiries.filter(i => i.user_id === rep.id && ['Won', 'Invoiced', 'Paid'].includes(i.status));
-
-                const gmv = repDeals.reduce((sum, i) => sum + (parseFloat(i.est_revenue) || 0), 0);
-                const gp = repDeals.reduce((sum, i) => sum + (parseFloat(i.est_gp) || 0), 0);
-                const deals = repDeals.length;
+                const repData = leaderboardData?.find(d => d.user_id === rep.id) || {
+                    total_revenue: 0,
+                    total_gp: 0,
+                    total_deals: 0
+                };
 
                 return {
                     id: rep.id,
                     name: rep.sales_code || rep.full_name || rep.email?.split('@')[0],
                     avatar: rep.avatar_url || `https://ui-avatars.com/api/?name=${rep.full_name || 'User'}&background=random`,
-                    gmv,
-                    gp,
-                    deals
+                    gmv: parseFloat(repData.total_revenue) || 0,
+                    gp: parseFloat(repData.total_gp) || 0,
+                    deals: parseInt(repData.total_deals) || 0
                 };
             });
 
-            // Filter out those with 0 activity if desired, or keep them.
-            // Let's keep them but sort.
             setRankings(aggregated);
         } catch (error) {
             console.error("Error fetching leaderboard:", error);
