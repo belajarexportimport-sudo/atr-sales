@@ -259,13 +259,13 @@ export const inquiryService = {
 
     /**
      * Get Open Inquiries (Unassigned)
+     * Shows all inquiries where user_id is NULL, regardless of status
      */
     async getOpenInquiries() {
         const { data, error } = await supabase
             .from('inquiries')
             .select('*')
             .is('user_id', null)
-            .eq('status', 'UNASSIGNED')
             .order('created_at', { ascending: false });
 
         handleError(error, 'getOpenInquiries');
