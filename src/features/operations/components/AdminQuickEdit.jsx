@@ -71,6 +71,13 @@ export default function AdminQuickEdit({ inquiry, onUpdate }) {
             console.log('✅ UPDATE success - user_id should be preserved');
 
             showToast('✅ Revenue updated successfully!', 'success');
+
+            // --- SYNC TO GOOGLE SHEET (MANUAL EDIT) ---
+            // Handled automatically by Database Trigger
+            if (formData.awb && formData.awb !== inquiry.awb_number) {
+                console.log('✅ AWB changed. DB Trigger will sync to GSheet.');
+            }
+
             setIsEditing(false);
             if (onUpdate) onUpdate();
 

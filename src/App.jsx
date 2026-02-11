@@ -16,6 +16,7 @@ import UpdatePasswordPage from './features/auth/pages/UpdatePasswordPage'
 import QuotationPage from './features/sales/pages/QuotationPage'
 import LeaderboardPage from './features/sales-performance/pages/LeaderboardPage'
 import SettingsPage from './features/core/pages/SettingsPage'
+import InvoicePrint from './features/operations/components/InvoicePrint'; // Import InvoicePrint
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -29,6 +30,7 @@ function AppContent() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [editingInquiry, setEditingInquiry] = useState(null);
   const [quotationInquiry, setQuotationInquiry] = useState(null);
+  const [printingInvoice, setPrintingInvoice] = useState(null); // Global Invoice State
 
   // Handle URL-based routing for Password Reset (Supabase Redirect)
   // When Supabase redirects back, it might include hash fragments.
@@ -63,10 +65,6 @@ function AppContent() {
   // Seeing as `App.jsx` imports `Link` in `ForgotPasswordPage`, the user might expect `react-router-dom`. 
   // But `App.jsx` itself does NOT seem to use `react-router-dom`'s `<Routes>`.
   // It uses a switch statement `renderPage`.
-
-  // Let's look at `App.jsx` again.
-  // It has `import { useState } from 'react'` but NO `react-router-dom` in the imports shown in previous `view_file`.
-  // Wait, `ForgotPasswordPage` I wrote uses `import { Link } from 'react-router-dom';`. THIS WILL CRASH if not inside a Router.
 
   // I need to fix `ForgotPasswordPage` to use a simple <a> tag or a prop callback if `react-router-dom` is not installed/used.
   // AND I need to handle the "routing" for the reset password link which comes from an external email.
@@ -199,7 +197,12 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onEditInquiry={handleEditInquiry} onQuote={handleViewQuotation} onNavigate={setCurrentPage} />;
+        return <DashboardPage
+          onEditInquiry={handleEditInquiry}
+          onQuote={handleViewQuotation}
+          onNavigate={setCurrentPage}
+          onPrintInvoice={(inquiry) => setPrintingInvoice(inquiry)}
+        />;
       case 'debug':
         return <DebugPage />;
       case 'leads':
@@ -214,6 +217,7 @@ function AppContent() {
             setCurrentPage('dashboard');
           }}
           onQuote={handleViewQuotation}
+          onPrintInvoice={(inquiry) => setPrintingInvoice(inquiry)} // Pass Handler
         />;
       case 'tracking':
         return <TrackingPage />;
@@ -255,6 +259,14 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50">
       <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
       {renderPage()}
+
+      {/* Global Invoice Print Modal */}
+      {printingInvoice && (
+        <InvoicePrint
+          inquiry={printingInvoice}
+          onClose={() => setPrintingInvoice(null)}
+        />
+      )}
     </div>
   );
 }

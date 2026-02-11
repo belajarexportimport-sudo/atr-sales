@@ -16,12 +16,12 @@ import { useModal } from '../../../contexts/ModalContext';
 import AWBPrint from '../../../components/AWBPrint';
 import AdminQuickEdit from '../../operations/components/AdminQuickEdit';
 
-export default function DashboardPage({ onEditInquiry, onQuote }) {
+export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
     const { showConfirm } = useModal();
     // ... (existing state)
-    const [printingAWB, setPrintingAWB] = useState(null); // NEW: State for AWB Print Modal
+    const [printingAWB, setPrintingAWB] = useState(null);
 
 
     const [inquiries, setInquiries] = useState([]);
@@ -152,7 +152,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         // --- REVENUE CALC ---
         // REVENUE CALCULATION - Only count Won/Invoiced/Paid
         const totalRevenue = filteredData
-            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
+            .filter(inq => ['Won', 'Won - Verification at WHS', 'Invoiced', 'Paid'].includes(inq.status))
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
         const potentialRevenue = filteredData
@@ -164,7 +164,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
             .reduce((sum, inq) => sum + (parseFloat(inq.est_revenue) || 0), 0);
 
         const totalGP = filteredData
-            .filter(inq => ['Won', 'Invoiced', 'Paid'].includes(inq.status))
+            .filter(inq => ['Won', 'Won - Verification at WHS', 'Invoiced', 'Paid'].includes(inq.status))
             .reduce((sum, inq) => sum + (parseFloat(inq.est_gp) || 0), 0);
 
         // 1. Projection (Potential Deals)
@@ -176,7 +176,7 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
         // Includes: Won/Invoiced/Paid where commission_status IS NOT 'Paid'
         const commWon = filteredData
             .filter(inq =>
-                ['Won', 'Invoiced', 'Paid'].includes(inq.status) &&
+                ['Won', 'Won - Verification at WHS', 'Invoiced', 'Paid'].includes(inq.status) &&
                 inq.commission_status !== 'Paid'
             )
             .reduce((sum, inq) => sum + (parseFloat(inq.commission_amount || inq.est_commission) || 0), 0);
@@ -288,29 +288,12 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                         Hello, {profile?.full_name?.split(' ')[0] || 'Sales'} 👋
                     </h1>
                     <div className="flex items-center gap-2">
-                        <p className="text-gray-400 text-sm">v4.3 - Dashboard Fixed</p>
+                        <p className="text-gray-400 text-sm">v4.6 - Invoice Restored</p>
                         {profile?.sales_code && (
                             <span className="text-[10px] bg-secondary-800 text-primary-400 px-2 py-0.5 rounded border border-primary-900/50 font-mono tracking-wider">
                                 🆔 {profile.sales_code}
                             </span>
                         )}
-                        <button
-                            onClick={() => {
-                                if ('serviceWorker' in navigator) {
-                                    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                                        for (let registration of registrations) {
-                                            registration.unregister();
-                                        }
-                                        window.location.reload(true);
-                                    });
-                                } else {
-                                    window.location.reload(true);
-                                }
-                            }}
-                            className="bg-red-900/50 hover:bg-red-800 text-red-200 text-[10px] px-2 py-0.5 rounded border border-red-700/50"
-                        >
-                            ⚠️ Force Update
-                        </button>
                     </div>
                 </div>
                 {profile?.role === 'admin' && (
@@ -480,17 +463,38 @@ export default function DashboardPage({ onEditInquiry, onQuote }) {
                                                         ✋ Request
                                                     </button>
                                                 )}
-                                                <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
-                                                <button onClick={() => onQuote && onQuote(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Print Quote">📄</button>
-                                                {inquiry.awb_number && (
-                                                    <button
-                                                        onClick={() => setPrintingAWB(inquiry)}
-                                                        className="text-green-400 hover:text-green-300 ml-1"
-                                                        title={`Print AWB: ${inquiry.awb_number}`}
-                                                    >
-                                                        🖨️ AWB
-                                                    </button>
+
+                                                {/* Admin Quick Edit for AWB/Revenue */}
+                                                {profile?.role === 'admin' ? (
+                                                    <AdminQuickEdit inquiry={inquiry} onUpdate={fetchDashboardData} />
+                                                ) : (
+                                                    <button onClick={() => onEditInquiry && onEditInquiry(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Edit">✏️</button>
                                                 )}
+
+                                                <div className="flex items-center gap-1">
+                                                    {/* QUOTE */}
+                                                    <button onClick={() => onQuote && onQuote(inquiry)} className="text-gray-400 hover:text-white transition-colors" title="Print Quote">📄</button>
+
+                                                    {/* INVOICE (Restored) */}
+                                                    <button
+                                                        onClick={() => onPrintInvoice && onPrintInvoice(inquiry)}
+                                                        className="text-blue-400 hover:text-blue-300 font-bold border border-blue-900/50 px-2 py-1 rounded ml-1 text-xs"
+                                                        title="Print Invoice"
+                                                    >
+                                                        🧾 INVOICE
+                                                    </button>
+
+                                                    {/* AWB (Only if Generated) */}
+                                                    {inquiry.awb_number && (
+                                                        <button
+                                                            onClick={() => setPrintingAWB(inquiry)}
+                                                            className="text-green-400 hover:text-green-300 ml-1"
+                                                            title={`Print AWB: ${inquiry.awb_number}`}
+                                                        >
+                                                            🖨️ AWB
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
 
                                         </tr>

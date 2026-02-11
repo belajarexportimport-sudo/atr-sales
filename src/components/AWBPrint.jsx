@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
+import Barcode from 'react-barcode';
 
 export default function AWBPrint({ inquiry, onClose }) {
     const componentRef = useRef();
@@ -44,11 +45,22 @@ export default function AWBPrint({ inquiry, onClose }) {
                         </div>
                     </div>
 
-                    {/* BARCODE PLACEHOLDER */}
-                    <div className="flex justify-center my-6">
-                        <div className="border-2 border-black border-dashed w-full h-16 flex items-center justify-center bg-gray-100">
-                            <span className="text-gray-400 font-mono text-xs tracking-[1em] uppercase">||| || ||| || |||||| || ||| |||| | ||</span>
-                        </div>
+                    {/* BARCODE - REAL GENERATION */}
+                    <div className="flex justify-center my-4">
+                        {inquiry.awb_number ? (
+                            <Barcode
+                                value={inquiry.awb_number}
+                                width={2}
+                                height={60}
+                                fontSize={14}
+                                font="monospace"
+                                margin={10}
+                            />
+                        ) : (
+                            <div className="border-2 border-black border-dashed w-full h-16 flex items-center justify-center bg-gray-100">
+                                <span className="text-gray-400 font-mono text-xs">NO AWB NUMBER</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* SHIPPER & CONSIGNEE GRID */}
@@ -103,9 +115,9 @@ export default function AWBPrint({ inquiry, onClose }) {
                                             <td className="p-1 border-r border-black text-center">
                                                 {pkg.length ? `${pkg.length}x${pkg.width}x${pkg.height}` : pkg.dimension}
                                             </td>
-                                            <td className="p-1 border-r border-black text-center">{pkg.weight} kg</td>
+                                            <td className="p-1 border-r border-black text-center">{parseFloat(pkg.weight) || 0} kg</td>
                                             <td className="p-1 text-center font-bold">
-                                                {pkg.cwt ? `${pkg.cwt} kg` : '-'}
+                                                {pkg.cwt ? `${parseFloat(pkg.cwt) || 0} kg` : '-'}
                                             </td>
                                         </tr>
                                     ))}

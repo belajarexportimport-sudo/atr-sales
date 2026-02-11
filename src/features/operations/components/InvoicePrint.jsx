@@ -12,26 +12,26 @@ export default function InvoicePrint({ inquiry, onClose }) {
 
     // --- INVOICE TITLE LOGIC (Simple & Modular) ---
     // Proforma: Pre-shipment statuses (Profiling, Proposal, Negotiation, Won)
-    // Commercial: Post-pickup/verification statuses (Won - Verification at WHS, Invoiced, Paid, etc.)
+    // Final: Post-pickup/verification statuses (Won - Verification at WHS, Invoiced, Paid, etc.)
     console.log('DEBUG INVOICE STATUS:', inquiry?.status);
 
     const currentStatus = inquiry?.status || '';
 
     // Define status categories
     const proformaStatuses = ['Profiling', 'Proposal', 'Negotiation', 'Won'];
-    const commercialStatuses = ['Won - Verification at WHS', 'Invoiced', 'Paid', 'Overdue'];
+    const finalStatuses = ['Won - Verification at WHS', 'Invoiced', 'Paid', 'Overdue'];
 
-    // Check if status matches commercial criteria (case-insensitive)
-    const isCommercial = commercialStatuses.some(s =>
+    // Check if status matches final invoice criteria (case-insensitive)
+    const isFinalInvoice = finalStatuses.some(s =>
         currentStatus.toLowerCase().includes(s.toLowerCase())
     );
 
-    // Default to Proforma if status is explicitly in proforma list, otherwise use commercial check
+    // Default to Proforma if status is explicitly in proforma list, otherwise use final check
     const isProforma = proformaStatuses.some(s =>
         s.toLowerCase() === currentStatus.toLowerCase()
     );
 
-    const invoiceTitle = isCommercial ? "COMMERCIAL INVOICE" :
+    const invoiceTitle = isFinalInvoice ? "FINAL INVOICE" :
         isProforma ? "PROFORMA INVOICE" :
             "PROFORMA INVOICE"; // Default fallback
 
