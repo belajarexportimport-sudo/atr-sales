@@ -15,8 +15,8 @@ export function formatCurrency(amount) {
     }).format(amount)
 }
 
-// Calculate commission based on GP only
-export function calculateCommission(revenue, gp, rate = 0.02) {
+// Calculate commission based on GP only (10% of GP)
+export function calculateCommission(revenue, gp, rate = 0.10) {
     return gp * rate;
 }
 

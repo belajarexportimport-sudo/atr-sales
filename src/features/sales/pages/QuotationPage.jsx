@@ -42,14 +42,7 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
             {/* A4 PAPER CONTAINER */}
             <div className="max-w-[210mm] mx-auto bg-white shadow-xl min-h-[297mm] p-[15mm] text-black relative print:shadow-none print:w-full">
 
-                {/* DRAFT WATERMARK */}
-                {inquiry.quote_status !== 'Approved' && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0">
-                        <div className="transform -rotate-45 text-gray-200 text-[150px] font-black opacity-20 select-none whitespace-nowrap">
-                            QUOTATION DRAFT
-                        </div>
-                    </div>
-                )}
+                {/* Removed: DRAFT WATERMARK - quotations no longer require approval */}
 
                 {/* HEADER */}
                 <header className="flex justify-between items-start border-b-2 border-primary-800 pb-4 mb-8 relative z-10">
@@ -58,7 +51,7 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
                     </div>
                     <div className="text-right">
                         <h1 className="text-3xl font-bold text-primary-800 uppercase tracking-widest">Quotation</h1>
-                        <p className="text-sm font-bold mt-1">NO: {inquiry.quote_status === 'Approved' ? `Q-${inquiry.id.slice(0, 8).toUpperCase()}` : 'DRAFT / UNVERIFIED'}</p>
+                        <p className="text-sm font-bold mt-1">NO: Q-{inquiry.id.slice(0, 8).toUpperCase()}</p>
                         <p className="text-sm text-gray-500">Date: {formatDate(new Date())}</p>
                     </div>
                 </header>

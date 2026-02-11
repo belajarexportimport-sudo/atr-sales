@@ -90,16 +90,9 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                 pComms = dComms;
                 pReqs = dReqs;
             }
-            // Calculate Pending Quotes from inqData (no need for extra fetch)
-            // Includes explicitly pending OR missing revenue (need pricing)
-            const pendingQuotes = profile?.role === 'admin'
-                ? inqData.filter(d =>
-                    d.quote_status === 'Pending Approval' ||
-                    ((!d.est_revenue || parseFloat(d.est_revenue) === 0) && !['Lost', 'Cancelled', 'Won', 'Invoiced', 'Paid'].includes(d.status))
-                )
-                : [];
+            // Removed: Pending Quotes calculation - quotation approval no longer needed
 
-            generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads, pendingQuotes);
+            generateTodoList(inqData, pUsers, pComms, pReqs, sharkTankLeads);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -108,21 +101,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
         }
     };
 
-    const handleRequestApproval = (inquiryId) => {
-        console.log('🖐️ Request Approval clicked for inquiry:', inquiryId);
-
-        showConfirm('Request Approval?', 'Submit this quotation for Admin approval? Check margin/GP first.', async () => {
-            try {
-                console.log('📤 Sending approval request...');
-                await inquiryService.requestQuoteApproval(inquiryId);
-                showToast('🚀 Quote Approval Requested!', 'success');
-                fetchDashboardData();
-            } catch (error) {
-                console.error('Error requesting approval:', error);
-                showToast('❌ Failed: ' + error.message, 'error');
-            }
-        });
-    };
+    // Removed: handleRequestApproval - quotation approval no longer needed
 
     const getSalesName = (id) => {
         const rep = salesReps.find(r => r.id === id);
@@ -209,7 +188,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
         });
     };
 
-    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = [], sharkTankLeads = [], pendingQuotes = []) => {
+    const generateTodoList = (data, pendingUsers = [], pendingCommissions = [], pendingRequests = [], sharkTankLeads = []) => {
         const tasks = [];
 
         // --- ADMIN ALERTS ---
@@ -217,7 +196,6 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
             if (pendingUsers.length > 0) tasks.push({ id: 'users', type: 'admin', title: `👥 ${pendingUsers.length} User Approval`, desc: 'New users', priority: 'high' });
             if (pendingCommissions.length > 0) tasks.push({ id: 'commissions', type: 'admin', title: `💰 ${pendingCommissions.length} Commission Approval`, desc: 'Review commissions', priority: 'high' });
             if (pendingRequests.length > 0) tasks.push({ id: 'awb', type: 'admin', title: `📦 ${pendingRequests.length} AWB Request`, desc: 'Sales requests', priority: 'medium' });
-            if (pendingQuotes.length > 0) tasks.push({ id: 'quotes', type: 'admin', title: `📄 ${pendingQuotes.length} Quotation Approval`, desc: 'Review prices', priority: 'medium' });
 
             // New Leads Today
             const today = new Date().toISOString().slice(0, 10);
@@ -238,11 +216,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                 });
             }
 
-            // 2. Quotation Approved (NEW)
-            const approvedQuotes = data.filter(d => d.quote_status === 'Approved' && d.status === 'Proposal');
-            if (approvedQuotes.length > 0) {
-                tasks.push({ id: 'quote_ok', type: 'success', title: `✅ ${approvedQuotes.length} Quotation APPROVED`, desc: 'Print & Send to Customer', priority: 'high' });
-            }
+            // Removed: Quotation Approved alert - no longer using approval workflow
 
             // 3. Recent Approvals
             // Show "Commission Approved" if approved but not paid
@@ -454,15 +428,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                                                 ) : <div className="font-mono text-xs text-gray-600">-</div>}
                                             </td>
                                             <td className="px-4 py-3 text-sm flex gap-2">
-                                                {inquiry.quote_status === 'Draft' && (
-                                                    <button
-                                                        onClick={() => handleRequestApproval(inquiry.id)}
-                                                        className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20 transition-all text-xs border border-yellow-600 px-2 py-0.5 rounded cursor-pointer pointer-events-auto"
-                                                        title="Request Approval"
-                                                        type="button">
-                                                        ✋ Request
-                                                    </button>
-                                                )}
+                                                {/* Removed: Request Approval button - quotation approval no longer needed */}
 
                                                 {/* Admin Quick Edit for AWB/Revenue */}
                                                 {profile?.role === 'admin' ? (
