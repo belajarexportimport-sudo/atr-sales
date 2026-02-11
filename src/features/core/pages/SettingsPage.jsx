@@ -87,6 +87,49 @@ export default function SettingsPage() {
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Account Information Section (Read-Only) */}
+                <div className="card space-y-4">
+                    <h2 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
+                        👤 Account Information
+                    </h2>
+                    <p className="text-sm text-gray-400">
+                        Your account details (read-only)
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">Sales Code</label>
+                            <input
+                                type="text"
+                                className="input-field bg-gray-800 cursor-not-allowed"
+                                value={profile?.sales_code || 'Not assigned'}
+                                readOnly
+                                disabled
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Full Name</label>
+                            <input
+                                type="text"
+                                className="input-field bg-gray-800 cursor-not-allowed"
+                                value={profile?.full_name || user?.email?.split('@')[0] || 'Not set'}
+                                readOnly
+                                disabled
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="label">Email Address</label>
+                            <input
+                                type="email"
+                                className="input-field bg-gray-800 cursor-not-allowed"
+                                value={user?.email || 'Not set'}
+                                readOnly
+                                disabled
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 {/* Bank Details Section */}
                 <div className="card space-y-4">
                     <h2 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
