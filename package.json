@@ -13,6 +13,7 @@
     "@sentry/react": "^10.38.0",
     "@supabase/supabase-js": "^2.93.3",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "react": "^19.2.0",
     "react-barcode": "^1.6.1",
     "react-dom": "^19.2.0",

@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { formatCurrency, getStatusColor, calculateCommission } from '../../../lib/utils';
+import { exportInquiriesToExcel } from '../../../lib/exportUtils';
 // Services
 import { inquiryService } from '../../../services/inquiryService';
 import { userService } from '../../../services/userService';
@@ -29,6 +30,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
     const [selectedSalesId, setSelectedSalesId] = useState('all');
     const [loading, setLoading] = useState(true);
     const [todoList, setTodoList] = useState([]);
+    const [exporting, setExporting] = useState(false);
     // FIXED: Initialize stats state to avoid undefined errors
     const [stats, setStats] = useState({
         totalRevenue: 0,
@@ -270,23 +272,44 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                         )}
                     </div>
                 </div>
-                {profile?.role === 'admin' && (
-                    <div className="flex items-center space-x-2 bg-secondary-800 p-2 rounded-lg border border-gray-700">
-                        <span className="text-xs text-gray-400 uppercase font-bold">Filter Sales:</span>
-                        <select
-                            value={selectedSalesId}
-                            onChange={(e) => setSelectedSalesId(e.target.value)}
-                            className="bg-secondary-900 text-gray-200 text-sm rounded border border-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 p-1"
-                        >
-                            <option value="all">⭐ All Sales Team</option>
-                            {salesReps.map(rep => (
-                                <option key={rep.id} value={rep.id}>
-                                    {rep.sales_code ? `[${rep.sales_code}] ` : ''}{rep.full_name || 'Unknown'} ({rep.email})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                )}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                    {profile?.role === 'admin' && (
+                        <div className="flex items-center space-x-2 bg-secondary-800 p-2 rounded-lg border border-gray-700">
+                            <span className="text-xs text-gray-400 uppercase font-bold">Filter Sales:</span>
+                            <select
+                                value={selectedSalesId}
+                                onChange={(e) => setSelectedSalesId(e.target.value)}
+                                className="bg-secondary-900 text-gray-200 text-sm rounded border border-gray-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 p-1"
+                            >
+                                <option value="all">⭐ All Sales Team</option>
+                                {salesReps.map(rep => (
+                                    <option key={rep.id} value={rep.id}>
+                                        {rep.sales_code ? `[${rep.sales_code}] ` : ''}{rep.full_name || 'Unknown'} ({rep.email})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <button
+                        onClick={async () => {
+                            try {
+                                setExporting(true);
+                                const displayedInquiries = getDisplayedInquiries();
+                                await exportInquiriesToExcel(displayedInquiries);
+                                showToast('✅ Excel file downloaded successfully!', 'success');
+                            } catch (error) {
+                                console.error('Export error:', error);
+                                showToast('❌ Failed to export. Please try again.', 'error');
+                            } finally {
+                                setExporting(false);
+                            }
+                        }}
+                        disabled={exporting || inquiries.length === 0}
+                        className="btn-secondary whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {exporting ? '⏳ Exporting...' : '📊 Export to Excel'}
+                    </button>
+                </div>
             </header>
 
             {/* GRID LAYOUT - Adjusted for extra card width if needed */}

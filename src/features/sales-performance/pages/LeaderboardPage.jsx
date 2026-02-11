@@ -3,10 +3,14 @@ import { supabase } from '../../../lib/supabase';
 import { inquiryService } from '../../../services/inquiryService';
 import { userService } from '../../../services/userService';
 import { formatCurrency } from '../../../lib/utils'; // Assumed utils exist
+import { exportLeaderboardToExcel } from '../../../lib/exportUtils';
+import { useToast } from '../../../contexts/ToastContext';
 
 export default function LeaderboardPage() {
+    const { showToast } = useToast();
     const [rankings, setRankings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
     const [filter, setFilter] = useState('gmv'); // 'gmv', 'deals', 'gp'
 
     useEffect(() => {
@@ -80,9 +84,40 @@ export default function LeaderboardPage() {
 
     return (
         <div className="p-4 md:p-6 max-w-lg mx-auto md:max-w-4xl pb-20">
-            <header className="mb-6 text-center">
-                <h1 className="text-2xl font-bold text-gray-900">🏆 Sales Leaderboard</h1>
-                <p className="text-gray-500 text-sm">Top Performers by {getMetricLabel()}</p>
+            <header className="mb-6">
+                <div className="text-center mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900">🏆 Sales Leaderboard</h1>
+                    <p className="text-gray-500 text-sm">Top Performers by {getMetricLabel()}</p>
+                </div>
+                <div className="flex justify-center">
+                    <button
+                        onClick={async () => {
+                            try {
+                                setExporting(true);
+                                // Prepare data with full names and sales codes
+                                const exportData = getSortedRankings().map(r => ({
+                                    ...r,
+                                    full_name: r.name,
+                                    sales_code: r.name,
+                                    total_revenue: r.gmv,
+                                    total_gp: r.gp,
+                                    total_deals: r.deals
+                                }));
+                                await exportLeaderboardToExcel(exportData);
+                                showToast('✅ Excel file downloaded successfully!', 'success');
+                            } catch (error) {
+                                console.error('Export error:', error);
+                                showToast('❌ Failed to export. Please try again.', 'error');
+                            } finally {
+                                setExporting(false);
+                            }
+                        }}
+                        disabled={exporting || rankings.length === 0}
+                        className="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {exporting ? '⏳ Exporting...' : '📊 Export to Excel'}
+                    </button>
+                </div>
             </header>
 
             {/* Filters */}
