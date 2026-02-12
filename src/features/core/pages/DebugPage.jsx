@@ -134,13 +134,7 @@ export default function DebugPage() {
                     >
                         ▶ Test 'get_pending_users'
                     </button>
-                    <button
-                        onClick={() => runTest('Approve Commission RPC', testCommissionRPC)}
-                        className="w-full bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded text-left"
-                        disabled={loading}
-                    >
-                        ▶ Test 'approve_commission' (Signature)
-                    </button>
+                    {/* testCommissionRPC button removed - function was undefined */}
                     <button
                         onClick={() => runTest('Full Commission Flow Simulation', simulateFullCommissionFlow)}
                         className="w-full bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-left mt-2 border border-green-500"
