@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import PasswordInput from '../../../components/PasswordInput';
 
 export default function LoginPage() {
     const { signIn, signUp } = useAuth();
@@ -98,14 +99,13 @@ export default function LoginPage() {
 
                     <div>
                         <label className="label">Password</label>
-                        <input
-                            type="password"
-                            className="input-field"
-                            placeholder="••••••••"
+                        <PasswordInput
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="input-field"
                             required
-                            disabled={loading}
+                            autoComplete={isSignUp ? "new-password" : "current-password"}
                         />
                     </div>
 

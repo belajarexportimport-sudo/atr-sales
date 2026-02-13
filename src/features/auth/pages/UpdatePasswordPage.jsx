@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../contexts/ToastContext';
+import PasswordInput from '../../../components/PasswordInput';
 
 export default function UpdatePasswordPage() {
     const { showToast } = useToast();
@@ -66,27 +67,25 @@ export default function UpdatePasswordPage() {
                     {/* ... (inputs) ... */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">New Password</label>
-                        <input
-                            type="password"
-                            required
+                        <PasswordInput
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
                             placeholder="••••••••"
-                            disabled={loading}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
+                            required
+                            autoComplete="new-password"
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                        <input
-                            type="password"
-                            required
+                        <PasswordInput
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
                             placeholder="••••••••"
-                            disabled={loading}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2 border text-gray-900"
+                            required
+                            autoComplete="new-password"
                         />
                     </div>
 
