@@ -42,18 +42,30 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         // Check active session
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user?.id) {
-                await fetchProfile(session.user.id);
+        const initAuth = async () => {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                
+                setUser(session?.user ?? null);
+                if (session?.user?.id) {
+                    await fetchProfile(session.user.id);
+                }
+            } catch (err) {
+                console.error("Auth Init Error:", err);
+                // Optional: Sentry.captureException(err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-        });
+        };
+
+        initAuth();
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
             fetchProfile(session?.user?.id);
+            setLoading(false); // Ensure loading is off on change events too
         });
 
         return () => subscription.unsubscribe();
