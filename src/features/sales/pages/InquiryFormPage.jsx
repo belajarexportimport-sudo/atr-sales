@@ -176,14 +176,14 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
         }
     }, [lead, inquiry]);
 
-    // Auto-calculate commission
+    // Auto-calculate commission (Formula: GP * 2%)
     useEffect(() => {
-        if (formData.commission_approved) return;
+        // Removed: commission_approved check (Always calculate based on formula)
         const revenue = parseFloat(formData.est_revenue) || 0;
         const gp = parseFloat(formData.est_gp) || 0;
         const commission = commissionService.calculate(revenue, gp);
         setFormData(prev => ({ ...prev, est_commission: commission }));
-    }, [formData.est_revenue, formData.est_gp, formData.commission_approved]);
+    }, [formData.est_revenue, formData.est_gp]); // Removed commission_approved dependency
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -209,30 +209,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
         }
     };
 
-    // Approve Commission (REFACTORED: Use Custom Modal)
-    const handleApproveCommission = () => {
-        if (!inquiry?.id) return showToast('❌ Please save the RFQ first', 'error');
-
-        const amount = parseFloat(formData.est_commission) || 0;
-
-        showConfirm(
-            'Approve Commission',
-            `Approve commission of ${formatCurrency(amount)} for this RFQ?`,
-            async () => {
-                try {
-                    setLoading(true);
-                    await commissionService.approve(inquiry.id, user.id, amount);
-                    showToast('✅ Commission approved! Sales can now see the amount.', 'success');
-                    if (onSuccess) onSuccess();
-                } catch (err) {
-                    showToast('❌ Failed to approve commission: ' + err.message, 'error');
-                } finally {
-                    setLoading(false);
-                }
-            },
-            'warning'
-        );
-    };
+    // Removed: handleApproveCommission (Approval workflow deleted)
 
     // Handlers for Modular Forms
     const handleCopyCustomerToConsignee = () => {
@@ -733,7 +710,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                         <div className="relative">
                             <label className="label flex items-center gap-2">
                                 <span>💰 Your Commission</span>
-                                {formData.commission_approved && <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-bold uppercase rounded-full shadow-lg border border-yellow-400">✓ APPROVED</span>}
+                                {/* Approval Badge Removed */}
                             </label>
                             {profile?.role === 'admin' ? (
                                 <div className="space-y-2">
@@ -743,25 +720,14 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                                     </div>
                                     <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                                         <span className="text-yellow-500/80">Formula: GP × 2% = {formatCurrency((parseFloat(formData.est_gp) || 0) * 0.02)}</span>
-                                        {!formData.commission_approved ? (
-                                            formData.est_commission > 0 && isEditMode && (
-                                                <button type="button" onClick={handleApproveCommission} className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-lg hover:from-yellow-400 hover:to-amber-500 shadow-lg shadow-yellow-900/50 transition-all text-xs">✓ Approve</button>
-                                            )
-                                        ) : (
-                                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, commission_approved: false }))} className="px-2 py-0.5 border border-red-500 text-red-400 hover:bg-red-900/30 rounded text-xs transition-colors">🔓 Unlock/Edit</button>
-                                        )}
                                     </div>
                                 </div>
                             ) : (
                                 <div>
-                                    {formData.commission_approved ? (
-                                        <div className="relative">
-                                            <input type="text" className="input-field bg-gradient-to-r from-secondary-800 to-secondary-900 border-2 border-yellow-600 text-yellow-500 font-bold text-lg shadow-[0_0_15px_rgba(234,179,8,0.2)]" value={formatCurrency(formData.est_commission)} disabled readOnly />
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg></div>
-                                        </div>
-                                    ) : (
-                                        <div className="relative"><input type="text" className="input-field bg-secondary-800 border-2 border-dashed border-gray-600 text-gray-400 italic" value="⏳ Pending Admin Approval" disabled readOnly /></div>
-                                    )}
+                                    <div className="relative">
+                                        <input type="text" className="input-field bg-gradient-to-r from-secondary-800 to-secondary-900 border-2 border-yellow-600 text-yellow-500 font-bold text-lg shadow-[0_0_15px_rgba(234,179,8,0.2)]" value={formatCurrency(formData.est_commission)} disabled readOnly />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg></div>
+                                    </div>
                                 </div>
                             )}
                         </div>
