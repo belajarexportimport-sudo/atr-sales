@@ -59,14 +59,16 @@
     color: black !important;
   }
 
-  /* 3. INVOICE MODAL SPECIAL HANDLING (Isolation) */
-  /* Only apply aggressive isolation if the Invoice Modal is present */
-  body:has(#invoice-print-area)>* {
+  /* 3. MODAL PRINT SPECIAL HANDLING (Invoice & AWB) */
+  /* Only apply aggressive isolation if a print modal is present */
+  body:has(#invoice-print-area)>*,
+  body:has(#awb-print-area)>* {
     visibility: hidden;
     /* Hide everything by default */
   }
 
-  body:has(#invoice-print-area) #invoice-print-area {
+  body:has(#invoice-print-area) #invoice-print-area,
+  body:has(#awb-print-area) #awb-print-area {
     visibility: visible !important;
     position: fixed !important;
     top: 0 !important;
@@ -78,7 +80,8 @@
     padding: 0 !important;
   }
 
-  body:has(#invoice-print-area) #invoice-print-area * {
+  body:has(#invoice-print-area) #invoice-print-area *,
+  body:has(#awb-print-area) #awb-print-area * {
     visibility: visible !important;
   }
 

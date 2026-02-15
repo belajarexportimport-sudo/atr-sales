@@ -1,13 +1,10 @@
-import { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
-import Barcode from 'react-barcode';
-
 export default function AWBPrint({ inquiry, onClose }) {
-    const componentRef = useRef();
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        onAfterPrint: onClose
-    });
+    // Native Print Trigger
+    const triggerPrint = () => {
+        setTimeout(() => {
+            window.print();
+        }, 300); // Small delay to ensure render
+    };
 
     if (!inquiry) return null;
 
@@ -18,13 +15,15 @@ export default function AWBPrint({ inquiry, onClose }) {
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-bold text-gray-800">Print AWB</h2>
                     <div className="space-x-2">
-                        <button onClick={handlePrint} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">🖨️ Print / Save PDF</button>
+                        <button onClick={triggerPrint} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow-lg transition-transform transform active:scale-95">
+                            🖨️ Print / Save PDF
+                        </button>
                         <button onClick={onClose} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Close</button>
                     </div>
                 </div>
 
                 {/* Printable Content */}
-                <div ref={componentRef} className="p-8 bg-white text-black font-sans leading-tight">
+                <div id="awb-print-area" className="p-8 bg-white text-black font-sans leading-tight">
 
                     {/* TOP HEADER */}
                     <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
