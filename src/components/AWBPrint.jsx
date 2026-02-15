@@ -1,3 +1,5 @@
+import Barcode from 'react-barcode';
+
 export default function AWBPrint({ inquiry, onClose }) {
     // Native Print Trigger
     const triggerPrint = () => {
