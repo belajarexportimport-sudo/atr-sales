@@ -674,16 +674,18 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                             )}
 
                             {/* ONE-CLICK FIX for "SALES" AWB */}
-                            {formData.awb_number && formData.awb_number.includes('SALES') && profile?.sales_code && profile.sales_code !== 'SALES' && (
+                            {formData.awb_number && formData.awb_number.includes('SALES') && (
                                 <div className="mt-2 flex items-center gap-2 bg-yellow-900/30 p-2 rounded border border-yellow-700/50">
                                     <span className="text-xs text-yellow-200">❌ Wrong Code?</span>
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            if (!confirm('Auto-fix AWB number to use your new code?')) return;
+                                            if (!confirm('Clean AWB number (remove "SALES")?')) return;
                                             try {
                                                 setLoading(true);
-                                                const newAWB = formData.awb_number.replace('SALES', profile.sales_code);
+                                                // Remove "-SALES" or "SALES-" to clean format
+                                                // ATR-2026-02-SALES-001 -> ATR-2026-02-001
+                                                const newAWB = formData.awb_number.replace('-SALES', '').replace('SALES-', '');
 
                                                 // Direct update to Supabase
                                                 const { error } = await supabase
@@ -703,7 +705,7 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                                         }}
                                         className="px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded shadow-sm"
                                     >
-                                        🛠️ Fix to "{profile.sales_code}"
+                                        🛠️ Remove "SALES"
                                     </button>
                                 </div>
                             )}
