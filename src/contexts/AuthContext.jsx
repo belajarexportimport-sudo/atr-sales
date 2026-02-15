@@ -24,16 +24,20 @@ export function AuthProvider({ children }) {
 
         // FAILSAFE: If profile missing, force create it via RPC
         if (!data || error) {
-            console.log("⚠️ Profile missing, attempting self-repair...");
+            console.warn("⚠️ Profile missing/error, attempting self-repair...", { userId, error });
             const { error: rpcError } = await supabase.rpc('ensure_user_profile');
-            if (!rpcError) {
+            if (rpcError) {
+                console.error("❌ Self-repair failed:", rpcError);
+            } else {
                 // Retry fetch
-                const retry = await supabase
+                const { data: retryData, error: retryError } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', userId)
                     .single();
-                data = retry.data;
+
+                if (retryError) console.error("❌ Retry fetch failed:", retryError);
+                data = retryData;
             }
         }
 
@@ -46,7 +50,7 @@ export function AuthProvider({ children }) {
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) throw error;
-                
+
                 setUser(session?.user ?? null);
                 if (session?.user?.id) {
                     await fetchProfile(session.user.id);

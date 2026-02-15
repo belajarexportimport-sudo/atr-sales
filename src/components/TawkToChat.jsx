@@ -28,8 +28,8 @@ export default function TawkToChat() {
                 window.Tawk_API.setAttributes({
                     name: profile.full_name || 'Unknown',
                     email: profile.email || '',
-                    'Sales Code': profile.sales_code || '',
-                    'Role': profile.role || 'sales'
+                    sales_code: profile.sales_code || '',
+                    role: profile.role || 'sales'
                 }, function (error) {
                     if (error) console.error('Tawk.to setAttributes error:', error);
                 });
