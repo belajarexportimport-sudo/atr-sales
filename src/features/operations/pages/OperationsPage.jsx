@@ -420,79 +420,16 @@ export default function OperationsPage({ onViewInquiry }) {
                 )}
             </div>
 
-            {/* Pending Commission Approvals Section */}
-            <div className="card mb-6 border-l-4 border-yellow-500 bg-secondary-800/80">
-                <h2 className="text-xl font-semibold mb-4 text-gray-200">💰 Pending Commission Approvals</h2>
+            {/* Pending Commission Approvals REMOVED (No longer needed) */}
 
-                {loadingCommissions ? (
-                    <p className="text-gray-500">Loading commissions...</p>
-                ) : pendingCommissions.length === 0 ? (
-                    <p className="text-gray-500">No pending commission requests</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-700">
-                            <thead className="bg-secondary-900/50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales Rep</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue (IDR)</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GP (IDR)</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Comm (IDR)</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-700">
-                                {pendingCommissions.map((comm) => (
-                                    <tr key={comm.inquiry_id} className="hover:bg-secondary-700/50 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-200">{comm.sales_rep}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-400">{comm.customer_name}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-400 font-mono">{formatCurrency(comm.est_revenue)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-400 font-mono">{formatCurrency(comm.est_gp)}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <div className="flex flex-col gap-1">
-                                                <input
-                                                    type="number"
-                                                    value={comm.est_commission}
-                                                    onChange={(e) => handleCommissionChange(comm.inquiry_id, e.target.value)}
-                                                    className="w-28 px-2 py-1 bg-secondary-900 border border-yellow-600 rounded text-right font-mono font-bold text-yellow-500 focus:ring-yellow-500 focus:border-yellow-500 text-xs"
-                                                />
-                                                <span className="text-[10px] text-gray-500">2% GP: {formatCurrency(comm.est_gp * 0.02)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(comm.created_at)}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <button
-                                                onClick={() => handleViewDetails(comm.inquiry_id)}
-                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs shadow-sm mr-2"
-                                                title="View Details"
-                                            >
-                                                🔍 View
-                                            </button>
-                                            <button
-                                                onClick={() => handleApproveCommission(comm.inquiry_id, comm.sales_rep, comm.est_commission)}
-                                                disabled={loading}
-                                                className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 text-xs shadow-sm shadow-yellow-900/50"
-                                            >
-                                                ✓ Approve
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-
-            {/* Approved Commissions (Ready to Pay) Section */}
+            {/* Commissions Ready to Pay (Won & Unpaid) */}
             <div className="card mb-6 border-l-4 border-green-500 bg-secondary-800/80">
-                <h2 className="text-xl font-semibold mb-4 text-gray-200">✅ Approved Commissions (Ready to Pay)</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">✅ Commissions Ready to Pay</h2>
 
                 {loadingApproved ? (
                     <p className="text-gray-500">Loading approved commissions...</p>
                 ) : approvedCommissions.length === 0 ? (
-                    <p className="text-gray-500">No approved commissions waiting for payment</p>
+                    <p className="text-gray-500">No payable commissions found (Won & Unpaid)</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-700">
@@ -584,95 +521,7 @@ export default function OperationsPage({ onViewInquiry }) {
                 )}
             </div>
 
-            {/* Pending Quote Approvals Section */}
-            <div className="card mb-6 border-l-4 border-blue-500 bg-secondary-800/80">
-                <h2 className="text-xl font-semibold mb-4 text-gray-200">📜 Pending Quote Approvals</h2>
-
-                {loadingQuotes ? (
-                    <p className="text-gray-500">Loading quotes...</p>
-                ) : pendingQuotes.length === 0 ? (
-                    <p className="text-gray-500">No pending quote requests</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-700">
-                            <thead className="bg-secondary-900/50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sales</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Revenue</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GP</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Origin/Dest</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-700">
-                                {pendingQuotes.map((q) => (
-                                    <tr key={q.inquiry_id} className="hover:bg-secondary-700/50 transition-colors">
-                                        <td className="px-4 py-3 text-sm text-gray-400">{formatDate(q.created_at)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-200">{q.sales_rep}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-200">{q.customer_name}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            {/* Editable Revenue */}
-                                            <input
-                                                type="number"
-                                                className="w-24 bg-secondary-900 border border-gray-600 rounded px-2 py-1 text-right font-mono text-xs text-white"
-                                                placeholder="Revenue"
-                                                value={q.est_revenue || ''}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setPendingQuotes(prev => prev.map(item =>
-                                                        item.inquiry_id === q.inquiry_id ? { ...item, est_revenue: val } : item
-                                                    ));
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3 text-sm">
-                                            {/* Editable GP */}
-                                            <input
-                                                type="number"
-                                                className="w-24 bg-secondary-900 border border-gray-600 rounded px-2 py-1 text-right font-mono text-xs text-green-400"
-                                                placeholder="GP"
-                                                value={q.est_gp || ''}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setPendingQuotes(prev => prev.map(item =>
-                                                        item.inquiry_id === q.inquiry_id ? { ...item, est_gp: val } : item
-                                                    ));
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3 text-xs text-gray-500">{q.origin} → {q.destination}</td>
-                                        <td className="px-4 py-3 text-sm flex gap-2">
-                                            <button
-                                                onClick={() => handleViewDetails(q.inquiry_id)}
-                                                className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-                                                title="View Details"
-                                            >
-                                                🔍
-                                            </button>
-                                            <button
-                                                onClick={() => handleApproveQuote(q.inquiry_id, q.customer_name, q.est_revenue, q.est_gp)}
-                                                disabled={loading}
-                                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs shadow-lg shadow-green-900/50"
-                                            >
-                                                ✓ Approve
-                                            </button>
-                                            <button
-                                                onClick={() => handleRejectQuote(q.inquiry_id, q.customer_name)}
-                                                disabled={loading}
-                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                                            >
-                                                ✕ Reject
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+            {/* Pending Quote Approvals REMOVED (No longer needed) */}
 
             {/* Manual Tracking Update Form */}
             <div className="card max-w-lg mx-auto">

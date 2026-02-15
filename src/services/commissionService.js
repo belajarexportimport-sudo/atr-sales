@@ -61,8 +61,8 @@ export const commissionService = {
     },
 
     /**
-     * Get Approved (Unpaid) Commissions
-     * For Admin Payment View
+     * Get Payable Commissions (Logic Updated: No Approval Needed)
+     * Fetches all WON deals where commission is not yet PAID.
      */
     async getApprovedCommissionsList() {
         try {
@@ -72,27 +72,32 @@ export const commissionService = {
                     id,
                     est_revenue, 
                     est_gp, 
-                    commission_amount, 
                     created_at, 
                     customer_name,
-                    user_id
+                    user_id,
+                    est_commission,
+                    commission_amount
                 `)
-                .eq('commission_status', 'Approved')
+                // Logic: Deal is WON/DONE, and Commission is NOT PAID, and Value > 0
+                .in('status', ['Won', 'Won - Verification at WHS', 'Invoiced', 'Paid'])
+                .neq('commission_status', 'Paid')
+                .gt('est_commission', 0)
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching approved commissions:', error);
+                console.error('Error fetching payable commissions:', error);
                 return [];
             }
 
-            // Return simplified data without profile join (avoid RLS issues)
+            // Return simplified data
             return (data || []).map(item => ({
                 inquiry_id: item.id,
-                sales_rep: 'Sales', // Simplified - can enhance later
+                sales_rep: 'Sales', // Simplified
                 customer_name: item.customer_name,
                 est_revenue: item.est_revenue,
                 est_gp: item.est_gp,
-                est_commission: item.commission_amount,
+                // Use est_commission as the main value since we skip the copy-to-commission_amount step
+                est_commission: item.est_commission,
                 created_at: item.created_at
             }));
         } catch (err) {
