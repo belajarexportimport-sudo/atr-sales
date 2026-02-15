@@ -61,7 +61,7 @@ export default function InvoicePrint({ inquiry, onClose }) {
                 </div>
 
                 {/* Printable Content */}
-                <div id="invoice-print-area" ref={componentRef} className="p-8 bg-white text-black font-sans leading-tight">
+                <div id="invoice-print-area" className="p-8 bg-white text-black font-sans leading-tight">
 
                     {/* HEADER */}
                     <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-8">
