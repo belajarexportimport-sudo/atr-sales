@@ -10,6 +10,7 @@ export default function SettingsPage() {
 
     // Form State
     const [formData, setFormData] = useState({
+        sales_code: '', // Initialize status
         bank_name: '',
         bank_account_no: '',
         bank_holder_name: '',
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     useEffect(() => {
         if (profile) {
             setFormData({
+                sales_code: profile.sales_code || '',
                 bank_name: profile.bank_name || '',
                 bank_account_no: profile.bank_account_no || '',
                 bank_holder_name: profile.bank_holder_name || '',
@@ -56,6 +58,7 @@ export default function SettingsPage() {
         try {
             const updates = {
                 id: user.id,
+                sales_code: formData.sales_code, // Add sales_code to update
                 bank_name: formData.bank_name,
                 bank_account_no: formData.bank_account_no,
                 bank_holder_name: formData.bank_holder_name,
@@ -87,25 +90,25 @@ export default function SettingsPage() {
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Account Information Section (Read-Only) */}
+                {/* Account Information Section */}
                 <div className="card space-y-4">
                     <h2 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
                         👤 Account Information
                     </h2>
-                    <p className="text-sm text-gray-400">
-                        Your account details (read-only)
-                    </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="label">Sales Code</label>
+                            <label className="label">Sales Code (Initials)</label>
                             <input
                                 type="text"
-                                className="input-field bg-gray-800 cursor-not-allowed"
-                                value={profile?.sales_code || 'Not assigned'}
-                                readOnly
-                                disabled
+                                name="sales_code"
+                                className="input-field"
+                                placeholder="e.g. JKT / AD / RF"
+                                value={formData.sales_code}
+                                onChange={handleChange}
+                                maxLength={5}
                             />
+                            <p className="text-[10px] text-gray-500 mt-1">Appears in AWB Number (e.g. ATR-2026-JKT-001)</p>
                         </div>
                         <div>
                             <label className="label">Full Name</label>
@@ -176,7 +179,7 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* Preferences Section (Scalable) */}
+                {/* Preferences Section */}
                 <div className="card space-y-4">
                     <h2 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
                         ⚙️ Preferences
