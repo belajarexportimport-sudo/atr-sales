@@ -10,7 +10,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-black font-bold py-2 px-4 rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)];
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-black font-bold py-2 px-4 rounded-xl transition-all shadow-[0_0_15px_rgba(212, 175, 55, 0.3)] hover:shadow-[0_0_20px_rgba(212, 175, 55, 0.5)];
   }
 
   .btn-secondary {
@@ -31,36 +31,58 @@
 }
 
 @media print {
+
   /* HIDE EVERYTHING GLOBALLY */
   body * {
     visibility: hidden;
   }
 
-  /* HIDE SPECIFIC ELEMENTS */
-  nav, header, footer, aside, .no-print {
+  /* HIDE SPECIFIC ELEMENTS WITH HIGH SPECIFICITY */
+  nav,
+  header,
+  footer,
+  aside,
+  .no-print,
+  [role="navigation"] {
     display: none !important;
   }
 
-  /* SHOW ONLY THE PRINT COMPONENT AND ITS CHILDREN */
-  #invoice-print-area, #invoice-print-area * {
-    visibility: visible;
+  /* FORCE HIDE DASHBOARD LAYOUT ELEMENTS */
+  .min-h-screen>div:first-child {
+    /* Targets navigation if untagged */
+    display: none !important;
   }
 
-  /* POSITION THE PRINT AREA */
+  /* RESET BACKGROUND & TEXT COLORS */
+  body,
+  #root,
+  .min-h-screen {
+    background-color: white !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* ENSURE PRINT AREA IS VISIBLE AND TOP-LEFT */
   #invoice-print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: white !important;
-    color: black !important;
+    visibility: visible !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    overflow: visible !important;
   }
 
-  /* Reset Body Background */
-  body {
-    background-color: white !important;
-    color: black !important;
+  /* HIDE EVERYTHING ELSE CAREFULLY */
+  body>*:not(#invoice-print-area) {
+    display: none !important;
+  }
+
+  /* Re-enable display for parent required for mounting, but hide efficiently */
+  body:has(#invoice-print-area)>*:not(#invoice-print-area) {
+    display: none !important;
   }
 }

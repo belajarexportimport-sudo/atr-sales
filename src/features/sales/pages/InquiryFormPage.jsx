@@ -197,7 +197,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
 
         try {
             setLoading(true);
-            await inquiryService.requestAWB(inquiry.id, user.id, profile.initials);
+            // Use sales_code if available, otherwise initials, otherwise fallback to 'XX'
+            const identifier = profile.sales_code || profile.initials || 'XX';
+            await inquiryService.requestAWB(inquiry.id, user.id, identifier);
             showToast('✅ AWB request submitted! Admin will approve shortly.', 'success');
             if (onSuccess) onSuccess();
         } catch (err) {
