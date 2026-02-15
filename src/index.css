@@ -37,71 +37,52 @@
 
 @media print {
 
-  /* HIDE EVERYTHING GLOBALLY */
-  body * {
-    visibility: hidden;
-  }
-
-  /* HIDE SPECIFIC ELEMENTS WITH HIGH SPECIFICITY */
+  /* 1. HIDE NON-PRINT ELEMENTS GLOBALLY */
   nav,
   header,
   footer,
-  aside,
   .no-print,
-  [role="navigation"] {
+  iframe[title*="chat"],
+  /* Tawk.to */
+  div[class*="tawk"]
+
+  /* Tawk.to */
+    {
     display: none !important;
   }
 
-  /* FORCE HIDE DASHBOARD LAYOUT ELEMENTS */
-  .min-h-screen>div:first-child {
-    /* Targets navigation if untagged */
-    display: none !important;
+  /* 2. RESET PAGE BACKGROUND */
+  body,
+  #root,
+  .min-h-screen {
+    background: white !important;
+    color: black !important;
   }
 
-  /* HIDE EVERYTHING BY DEFAULT */
-  body {
-    visibility: hidden !important;
-    background-color: white !important;
-    /* Remove padding/margin to prevent extra whitespace */
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    /* Hide scrollbars */
+  /* 3. INVOICE MODAL SPECIAL HANDLING (Isolation) */
+  /* Only apply aggressive isolation if the Invoice Modal is present */
+  body:has(#invoice-print-area)>* {
+    visibility: hidden;
+    /* Hide everything by default */
   }
 
-  /* SHOW ONLY THE PRINT TARGETS */
-  #invoice-print-area,
-  #quotation-print-area {
+  body:has(#invoice-print-area) #invoice-print-area {
     visibility: visible !important;
-    display: block !important;
     position: fixed !important;
-    /* Fixed to viewport */
     top: 0 !important;
     left: 0 !important;
     width: 100vw !important;
-    /* Use Viewport Width */
     height: 100vh !important;
-    /* Use Viewport Height */
-    margin: 0 !important;
-    padding: 20mm !important;
-    /* Standard A4 Padding */
     z-index: 99999 !important;
-    /* Always on top */
-    background-color: white !important;
-    box-shadow: none !important;
-    overflow: visible !important;
-    /* Allow content to flow */
+    background: white !important;
+    padding: 0 !important;
   }
 
-  /* ENSURE CHILDREN OF PRINT AREA ARE ALSO VISIBLE */
-  #invoice-print-area *,
-  #quotation-print-area * {
+  body:has(#invoice-print-area) #invoice-print-area * {
     visibility: visible !important;
   }
 
-  /* HIDE NAVBAR MANUALLY IF IT LEAKS THROUGH */
-  nav,
-  .no-print {
-    display: none !important;
-  }
+  /* 4. QUOTATION PAGE SPECIAL HANDLING (Route) */
+  /* No special isolation needed because it's a dedicated page. 
+     The generic .no-print hides the nav, and the page itself handles layout via Tailwind classes. */
 }

@@ -19,9 +19,9 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
     const unitRate = totalWeight > 0 ? estRevenue / totalWeight : 0;
 
     return (
-        <div className="bg-gray-100 min-h-screen p-4 print:p-0 print:bg-white">
+        <div className="bg-gray-100 min-h-screen p-4 print:p-0 print:bg-white print:absolute print:inset-0 print:w-full print:h-full print:z-50">
             {/* NO-PRINT Toolbar */}
-            <div className="max-w-[210mm] mx-auto mb-4 flex justify-between items-center print:hidden">
+            <div className="max-w-[210mm] mx-auto mb-4 flex justify-between items-center no-print">
                 <button
                     onClick={onBack}
                     className="px-4 py-2 bg-gray-600 text-white rounded shadow hover:bg-gray-700"
@@ -40,7 +40,7 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
             </div>
 
             {/* A4 PAPER CONTAINER */}
-            <div id="quotation-print-area" className="max-w-[210mm] mx-auto bg-white shadow-xl min-h-[297mm] p-[15mm] text-black relative print:shadow-none print:w-full">
+            <div id="quotation-print-area" className="max-w-[210mm] mx-auto bg-white shadow-xl min-h-[297mm] p-[15mm] text-black relative print:shadow-none print:w-full print:m-0 print:p-[15mm]">
 
                 {/* Removed: DRAFT WATERMARK - quotations no longer require approval */}
 
