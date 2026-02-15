@@ -13,27 +13,27 @@ export default function TawkToChat() {
         // Only load Tawk.to for non-admin users
         if (profile?.role === 'admin') {
             // Hide widget for admin
-            if (window.Tawk_API) {
+            if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
                 window.Tawk_API.hideWidget();
             }
             return;
         }
 
         // Show widget for sales/regular users
-        if (window.Tawk_API) {
+        if (window.Tawk_API && typeof window.Tawk_API.showWidget === 'function') {
             window.Tawk_API.showWidget();
+        }
 
-            // Set user attributes for better tracking
-            if (profile) {
-                window.Tawk_API.setAttributes({
-                    name: profile.full_name || 'Unknown',
-                    email: profile.email || '',
-                    salesCode: profile.sales_code || '',
-                    role: profile.role || 'sales'
-                }, function (error) {
-                    if (error) console.error('Tawk.to setAttributes error:', error);
-                });
-            }
+        // Set user attributes for better tracking
+        if (profile && window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
+            window.Tawk_API.setAttributes({
+                name: profile.full_name || 'Unknown',
+                email: profile.email || '',
+                salesCode: profile.sales_code || '',
+                role: profile.role || 'sales'
+            }, function (error) {
+                if (error) console.error('Tawk.to setAttributes error:', error);
+            });
         }
     }, [profile]);
 
