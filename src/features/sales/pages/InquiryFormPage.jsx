@@ -672,6 +672,41 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                                     ⚠️ Your AWB might show "SALES". Go to <b>Settings</b> to update your Sales Code (e.g. JKT).
                                 </p>
                             )}
+
+                            {/* ONE-CLICK FIX for "SALES" AWB */}
+                            {formData.awb_number && formData.awb_number.includes('SALES') && profile?.sales_code && profile.sales_code !== 'SALES' && (
+                                <div className="mt-2 flex items-center gap-2 bg-yellow-900/30 p-2 rounded border border-yellow-700/50">
+                                    <span className="text-xs text-yellow-200">❌ Wrong Code?</span>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (!confirm('Auto-fix AWB number to use your new code?')) return;
+                                            try {
+                                                setLoading(true);
+                                                const newAWB = formData.awb_number.replace('SALES', profile.sales_code);
+
+                                                // Direct update to Supabase
+                                                const { error } = await supabase
+                                                    .from('inquiries')
+                                                    .update({ awb_number: newAWB })
+                                                    .eq('id', inquiry.id);
+
+                                                if (error) throw error;
+
+                                                setFormData(prev => ({ ...prev, awb_number: newAWB }));
+                                                showToast('✅ AWB Fixed! Now: ' + newAWB, 'success');
+                                            } catch (err) {
+                                                showToast('❌ Fix failed: ' + err.message, 'error');
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }}
+                                        className="px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded shadow-sm"
+                                    >
+                                        🛠️ Fix to "{profile.sales_code}"
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
