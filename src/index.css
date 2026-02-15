@@ -58,41 +58,50 @@
     display: none !important;
   }
 
-  /* RESET BACKGROUND & TEXT COLORS */
-  body,
-  #root,
-  .min-h-screen {
+  /* HIDE EVERYTHING BY DEFAULT */
+  body {
+    visibility: hidden !important;
     background-color: white !important;
-    background: white !important;
-    color: black !important;
+    /* Remove padding/margin to prevent extra whitespace */
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    /* Hide scrollbars */
   }
 
-  /* ENSURE PRINT AREA IS VISIBLE AND TOP-LEFT */
-  /* ENSURE PRINT AREA IS VISIBLE AND TOP-LEFT */
+  /* SHOW ONLY THE PRINT TARGETS */
   #invoice-print-area,
   #quotation-print-area {
     visibility: visible !important;
+    display: block !important;
     position: fixed !important;
+    /* Fixed to viewport */
     top: 0 !important;
     left: 0 !important;
     width: 100vw !important;
+    /* Use Viewport Width */
     height: 100vh !important;
-    z-index: 9999 !important;
+    /* Use Viewport Height */
     margin: 0 !important;
-    padding: 0 !important;
-    /* Adjusted padding to 0, let component handle it */
-    overflow: visible !important;
+    padding: 20mm !important;
+    /* Standard A4 Padding */
+    z-index: 99999 !important;
+    /* Always on top */
     background-color: white !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    /* Allow content to flow */
   }
 
-  /* HIDE EVERYTHING ELSE CAREFULLY */
-  body>*:not(#invoice-print-area):not(#quotation-print-area) {
-    display: none !important;
+  /* ENSURE CHILDREN OF PRINT AREA ARE ALSO VISIBLE */
+  #invoice-print-area *,
+  #quotation-print-area * {
+    visibility: visible !important;
   }
 
-  /* Re-enable display for parent required for mounting, but hide efficiently */
-  body:has(#invoice-print-area)>*:not(#invoice-print-area),
-  body:has(#quotation-print-area)>*:not(#quotation-print-area) {
+  /* HIDE NAVBAR MANUALLY IF IT LEAKS THROUGH */
+  nav,
+  .no-print {
     display: none !important;
   }
 }
