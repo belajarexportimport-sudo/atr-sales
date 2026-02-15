@@ -1,6 +1,7 @@
 import Barcode from 'react-barcode';
 
 export default function AWBPrint({ inquiry, onClose }) {
+    console.log('AWB Print Component Loaded');
     // Native Print Trigger
     const triggerPrint = () => {
         setTimeout(() => {
