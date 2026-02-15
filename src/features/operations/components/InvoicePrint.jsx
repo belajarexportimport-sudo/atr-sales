@@ -5,8 +5,26 @@ export default function InvoicePrint({ inquiry, onClose }) {
     const componentRef = useRef();
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
-        onAfterPrint: onClose
+        documentTitle: inquiry ? `Invoice-${inquiry.awb_number || 'DRAFT'}` : 'Invoice',
+        onAfterPrint: () => {
+            console.log('✅ Print finished');
+            if (onClose) onClose();
+        },
+        onPrintError: (errorLocation, error) => {
+            console.error('❌ Print Error:', errorLocation, error);
+            alert('Print failed: ' + error.message);
+        }
     });
+
+    const triggerPrint = () => {
+        console.log('🖨️ Triggering Print...');
+        if (handlePrint) {
+            handlePrint();
+        } else {
+            console.error('❌ handlePrint is undefined');
+            alert('Print functionality is not ready. Please try again.');
+        }
+    };
 
     if (!inquiry) return null;
 
@@ -53,13 +71,15 @@ export default function InvoicePrint({ inquiry, onClose }) {
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-bold text-gray-800">Print Invoice</h2>
                     <div className="space-x-2">
-                        <button onClick={handlePrint} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">🖨️ Print / Save PDF</button>
+                        <button onClick={triggerPrint} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold shadow-lg transition-transform transform active:scale-95">
+                            🖨️ Print / Save PDF
+                        </button>
                         <button onClick={onClose} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Close</button>
                     </div>
                 </div>
 
                 {/* Printable Content */}
-                <div ref={componentRef} className="p-8 bg-white text-black font-sans leading-tight">
+                <div id="invoice-print-area" ref={componentRef} className="p-8 bg-white text-black font-sans leading-tight">
 
                     {/* HEADER */}
                     <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-8">

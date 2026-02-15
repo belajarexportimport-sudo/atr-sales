@@ -29,3 +29,38 @@
     @apply block text-xs font-semibold uppercase tracking-wider text-primary-400 mb-1.5;
   }
 }
+
+@media print {
+  /* HIDE EVERYTHING GLOBALLY */
+  body * {
+    visibility: hidden;
+  }
+
+  /* HIDE SPECIFIC ELEMENTS */
+  nav, header, footer, aside, .no-print {
+    display: none !important;
+  }
+
+  /* SHOW ONLY THE PRINT COMPONENT AND ITS CHILDREN */
+  #invoice-print-area, #invoice-print-area * {
+    visibility: visible;
+  }
+
+  /* POSITION THE PRINT AREA */
+  #invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Reset Body Background */
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+}
