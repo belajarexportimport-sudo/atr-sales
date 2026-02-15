@@ -40,7 +40,7 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
             </div>
 
             {/* A4 PAPER CONTAINER */}
-            <div className="max-w-[210mm] mx-auto bg-white shadow-xl min-h-[297mm] p-[15mm] text-black relative print:shadow-none print:w-full">
+            <div id="quotation-print-area" className="max-w-[210mm] mx-auto bg-white shadow-xl min-h-[297mm] p-[15mm] text-black relative print:shadow-none print:w-full">
 
                 {/* Removed: DRAFT WATERMARK - quotations no longer require approval */}
 

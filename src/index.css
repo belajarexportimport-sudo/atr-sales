@@ -68,7 +68,9 @@
   }
 
   /* ENSURE PRINT AREA IS VISIBLE AND TOP-LEFT */
-  #invoice-print-area {
+  /* ENSURE PRINT AREA IS VISIBLE AND TOP-LEFT */
+  #invoice-print-area,
+  #quotation-print-area {
     visibility: visible !important;
     position: fixed !important;
     top: 0 !important;
@@ -77,17 +79,20 @@
     height: 100vh !important;
     z-index: 9999 !important;
     margin: 0 !important;
-    padding: 20px !important;
+    padding: 0 !important;
+    /* Adjusted padding to 0, let component handle it */
     overflow: visible !important;
+    background-color: white !important;
   }
 
   /* HIDE EVERYTHING ELSE CAREFULLY */
-  body>*:not(#invoice-print-area) {
+  body>*:not(#invoice-print-area):not(#quotation-print-area) {
     display: none !important;
   }
 
   /* Re-enable display for parent required for mounting, but hide efficiently */
-  body:has(#invoice-print-area)>*:not(#invoice-print-area) {
+  body:has(#invoice-print-area)>*:not(#invoice-print-area),
+  body:has(#quotation-print-area)>*:not(#quotation-print-area) {
     display: none !important;
   }
 }

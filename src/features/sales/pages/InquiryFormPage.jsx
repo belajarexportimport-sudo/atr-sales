@@ -524,6 +524,26 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                             </div>
                         </div>
 
+                        {/* Shipper & Consignee Information (Critical for AWB) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-700">
+                            <div className="bg-secondary-900/50 p-3 rounded-lg border border-gray-700">
+                                <h4 className="text-sm font-bold text-gray-300 uppercase mb-2 border-b border-gray-600 pb-1">📤 Shipper Details</h4>
+                                <div className="space-y-2">
+                                    <input type="text" name="shipper_name" className="input-field text-sm" placeholder="Shipper Name" value={formData.shipper_name || ''} onChange={handleChange} />
+                                    <input type="text" name="shipper_phone" className="input-field text-sm" placeholder="Phone" value={formData.shipper_phone || ''} onChange={handleChange} />
+                                    <textarea name="shipper_address" className="input-field text-sm h-16 resize-none" placeholder="Address..." value={formData.shipper_address || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className="bg-secondary-900/50 p-3 rounded-lg border border-gray-700">
+                                <h4 className="text-sm font-bold text-gray-300 uppercase mb-2 border-b border-gray-600 pb-1">📥 Consignee Details</h4>
+                                <div className="space-y-2">
+                                    <input type="text" name="consignee_name" className="input-field text-sm" placeholder="Consignee Name" value={formData.consignee_name || ''} onChange={handleChange} />
+                                    <input type="text" name="consignee_phone" className="input-field text-sm" placeholder="Phone" value={formData.consignee_phone || ''} onChange={handleChange} />
+                                    <textarea name="consignee_address" className="input-field text-sm h-16 resize-none" placeholder="Address..." value={formData.consignee_address || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Multi-Collie Packages Section */}
                         <div className="mt-4 border border-gray-700 rounded-lg p-3 bg-secondary-900/30">
                             <label className="label mb-2 flex justify-between">
@@ -647,6 +667,11 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                                 )}
                             </div>
                             {!formData.awb_number && !isEditMode && <p className="text-xs text-gray-500 mt-1">Save RFQ first to request AWB number</p>}
+                            {!formData.awb_number && (profile?.sales_code === 'SALES' || !profile?.sales_code) && (
+                                <p className="text-[10px] text-yellow-500 mt-1">
+                                    ⚠️ Your AWB might show "SALES". Go to <b>Settings</b> to update your Sales Code (e.g. JKT).
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

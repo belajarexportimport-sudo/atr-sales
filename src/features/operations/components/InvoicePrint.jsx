@@ -1,29 +1,11 @@
-import { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
-
 export default function InvoicePrint({ inquiry, onClose }) {
-    const componentRef = useRef();
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: inquiry ? `Invoice-${inquiry.awb_number || 'DRAFT'}` : 'Invoice',
-        onAfterPrint: () => {
-            console.log('✅ Print finished');
-            if (onClose) onClose();
-        },
-        onPrintError: (errorLocation, error) => {
-            console.error('❌ Print Error:', errorLocation, error);
-            alert('Print failed: ' + error.message);
-        }
-    });
-
+    // Native Print Trigger
     const triggerPrint = () => {
-        console.log('🖨️ Triggering Print...');
-        if (handlePrint) {
-            handlePrint();
-        } else {
-            console.error('❌ handlePrint is undefined');
-            alert('Print functionality is not ready. Please try again.');
-        }
+        // Validation before print
+        if (!inquiry) return alert("Starting print...");
+        setTimeout(() => {
+            window.print();
+        }, 300); // Small delay to ensure render
     };
 
     if (!inquiry) return null;
