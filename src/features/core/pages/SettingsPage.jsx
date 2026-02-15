@@ -4,7 +4,7 @@ import { useToast } from '../../../contexts/ToastContext';
 import { supabase } from '../../../lib/supabase';
 
 export default function SettingsPage() {
-    const { user, profile } = useAuth();
+    const { user, profile, refreshProfile } = useAuth();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -73,6 +73,9 @@ export default function SettingsPage() {
 
             if (error) throw error;
 
+
+
+            await refreshProfile(); // Refresh context
             showToast('✅ Settings updated successfully!', 'success');
         } catch (error) {
             console.error(error);

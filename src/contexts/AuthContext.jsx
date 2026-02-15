@@ -116,6 +116,12 @@ export function AuthProvider({ children }) {
         }
     };
 
+    const refreshProfile = async () => {
+        if (user?.id) {
+            await fetchProfile(user.id);
+        }
+    };
+
     const value = {
         user,
         profile,
@@ -123,6 +129,7 @@ export function AuthProvider({ children }) {
         signIn,
         signUp,
         signOut,
+        refreshProfile, // Exported
     };
 
     return (
