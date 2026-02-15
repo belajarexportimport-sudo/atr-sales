@@ -27,21 +27,17 @@ export default function OperationsPage({ onViewInquiry }) {
     const [loadingRequests, setLoadingRequests] = useState(true);
     const [pendingUsers, setPendingUsers] = useState([]);
     const [loadingUsers, setLoadingUsers] = useState(true);
-    const [pendingCommissions, setPendingCommissions] = useState([]);
-    const [loadingCommissions, setLoadingCommissions] = useState(true);
     const [approvedCommissions, setApprovedCommissions] = useState([]); // NEW
     const [loadingApproved, setLoadingApproved] = useState(true); // NEW
-    const [pendingQuotes, setPendingQuotes] = useState([]);
-    const [loadingQuotes, setLoadingQuotes] = useState(true); // NEW
     const [userInitials, setUserInitials] = useState({});
 
     // Fetch pending AWB requests and users on mount
     useEffect(() => {
         fetchPendingRequests();
         fetchPendingUsers();
-        fetchPendingCommissions();
+        fetchPendingRequests();
+        fetchPendingUsers();
         fetchApprovedCommissions(); // NEW
-        fetchPendingQuotes();
     }, []);
 
     // Helper: Fetch Full Inquiry Details and Open View
@@ -221,44 +217,7 @@ export default function OperationsPage({ onViewInquiry }) {
 
 
 
-    // Fetch pending commissions
-    const fetchPendingCommissions = async () => {
-        try {
-            setLoadingCommissions(true);
-            const data = await commissionService.getPendingCommissionsList();
-            setPendingCommissions(data);
-        } catch (error) {
-            console.error('Error fetching pending commissions:', error);
-        } finally {
-            setLoadingCommissions(false);
-        }
-    };
 
-    // Handle Commission Change
-    const handleCommissionChange = (inquiryId, newAmount) => {
-        setPendingCommissions(prev => prev.map(comm =>
-            comm.inquiry_id === inquiryId
-                ? { ...comm, est_commission: newAmount }
-                : comm
-        ));
-    };
-
-    // Approve Commission
-    const handleApproveCommission = (inquiryId, salesName, amount) => {
-        showConfirm('Approve Commission?', `Approve ${formatCurrency(amount)} for ${salesName}?`, async () => {
-            try {
-                setLoading(true);
-                await commissionService.approve(inquiryId, user.id, parseFloat(amount));
-                showToast('✅ Commission Approved!', 'success');
-                fetchPendingCommissions();
-            } catch (error) {
-                console.error('Error approving commission:', error);
-                showToast(`❌ Failed: ${error.message}`, 'error');
-            } finally {
-                setLoading(false);
-            }
-        });
-    };
 
     // Fetch approved commissions (ready to pay)
     const fetchApprovedCommissions = async () => {
@@ -290,63 +249,7 @@ export default function OperationsPage({ onViewInquiry }) {
         });
     };
 
-    // Fetch pending quotes
-    const fetchPendingQuotes = async () => {
-        try {
-            setLoadingQuotes(true);
-            const data = await inquiryService.getPendingQuotes();
-            setPendingQuotes(data);
-        } catch (error) {
-            console.error('Error fetching quotes:', error);
-        } finally {
-            setLoadingQuotes(false);
-        }
-    };
 
-    // Approve Quote
-    const handleApproveQuote = (inquiryId, customerName, revenue, gp) => {
-        // Validate
-        if (!revenue || revenue <= 0) {
-            showToast('⚠️ REVENUE KOSONG! Isi Revenue & GP di tabel dulu sebelum klik Approve', 'error');
-            return;
-        }
-        if (!gp || gp <= 0) {
-            showToast('⚠️ GP KOSONG! Isi GP di tabel dulu sebelum klik Approve', 'error');
-            return;
-        }
-
-        showConfirm('Approve Quote?', `Confirm Revenue: ${formatCurrency(revenue)}\nGP: ${formatCurrency(gp)}\n\nProceed for ${customerName}?`, async () => {
-            console.log('DEBUG: Approving Quote Payload:', {
-                p_inquiry_id: inquiryId,
-                p_approved_by: user.id,
-                p_revenue: parseFloat(revenue),
-                p_gp: parseFloat(gp || 0)
-            });
-
-            try {
-                setLoading(true);
-                await inquiryService.approveQuote(inquiryId, user.id, revenue, gp);
-                showToast('✅ Quotation Approved & Updated!', 'success');
-                fetchPendingQuotes();
-            } catch (error) {
-                console.error('Error approving quote:', error);
-                showToast(`❌ Failed: ${error.message}`, 'error');
-            } finally {
-                setLoading(false);
-            }
-        });
-    };
-
-    // Reject Quote
-    const handleRejectQuote = (inquiryId, customerName) => {
-        showConfirm('Reject Quote?', `Reject quotation for ${customerName}?`, async () => {
-            try {
-                setLoading(true);
-            } finally {
-                setLoading(false);
-            }
-        }, 'error');
-    };
 
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto">
