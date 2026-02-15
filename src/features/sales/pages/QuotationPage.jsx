@@ -47,7 +47,7 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
                 {/* HEADER */}
                 <header className="flex justify-between items-start border-b-2 border-primary-800 pb-4 mb-8 relative z-10">
                     <div>
-                        <img src="/logo_atr_official.png" alt="ATR Express" className="h-24 w-auto mb-2 object-contain" />
+                        <img src="/logo_atr_official.png" alt="ATR Express" className="h-40 w-auto mb-4 object-contain" />
                     </div>
                     <div className="text-right">
                         <h1 className="text-3xl font-bold text-primary-800 uppercase tracking-widest">Quotation</h1>
