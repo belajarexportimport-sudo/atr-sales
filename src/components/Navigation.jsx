@@ -47,7 +47,7 @@ export default function Navigation({ currentPage, onNavigate }) {
                                 }}
                                 className="text-[10px] text-gray-500 ml-1 border border-primary-900/50 px-1 rounded bg-secondary-900 hover:bg-red-900 cursor-pointer"
                                 title="Click to Force Update"
-                            >v4.4</span>
+                            >v4.7</span>
                         </div>
                     </div>
 
