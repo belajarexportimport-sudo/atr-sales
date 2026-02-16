@@ -31,6 +31,25 @@ export default function OperationsPage({ onViewInquiry }) {
     const [loadingApproved, setLoadingApproved] = useState(true); // NEW
     const [userInitials, setUserInitials] = useState({});
 
+    // SEARCH STATE
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState(null);
+    const [loadingSearch, setLoadingSearch] = useState(false);
+
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return;
+        try {
+            setLoadingSearch(true);
+            const results = await inquiryService.searchInquiries(searchQuery.trim());
+            setSearchResults(results);
+        } catch (error) {
+            console.error('Search error:', error);
+            showToast('Search failed', 'error');
+        } finally {
+            setLoadingSearch(false);
+        }
+    };
+
     // Fetch pending AWB requests and users on mount
     useEffect(() => {
         fetchPendingRequests();
@@ -257,6 +276,78 @@ export default function OperationsPage({ onViewInquiry }) {
                 <h1 className="text-2xl font-bold text-gray-100">Operations Dashboard</h1>
                 <p className="text-gray-400">User Approvals, AWB Approvals & Shipment Status Updates</p>
             </header>
+
+            {/* --- ADMIN SEARCH SECTION --- */}
+            <div className="card mb-6 border-b-4 border-blue-500">
+                <h2 className="text-xl font-semibold mb-4 text-gray-200">🔍 Find Quotation / Inquiry</h2>
+
+                <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex gap-2 mb-4">
+                    <input
+                        type="text"
+                        placeholder="Enter Inquiry ID or Customer Name..."
+                        className="input-field flex-grow"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <button type="submit" className="btn-primary whitespace-nowrap" disabled={loadingSearch}>
+                        {loadingSearch ? 'Searching...' : 'Search'}
+                    </button>
+                    {searchResults && (
+                        <button type="button" onClick={() => { setSearchResults(null); setSearchQuery(''); }} className="btn-secondary">
+                            Clear
+                        </button>
+                    )}
+                </form>
+
+                {searchResults && (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-700">
+                            <thead className="bg-secondary-900/50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">ID</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Route</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Commodity</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-700">
+                                {searchResults.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" className="px-4 py-3 text-sm text-gray-500 text-center">No results found</td>
+                                    </tr>
+                                ) : (
+                                    searchResults.map((item) => (
+                                        <tr key={item.id} className="hover:bg-secondary-700/50 transition-colors">
+                                            <td className="px-4 py-3 text-sm font-mono text-primary-400">#{item.id}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-200">{item.customer_name}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-400">{item.origin_city} ➝ {item.destination_city}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-300">{item.commodity} ({item.weight}kg)</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                <span className={`px-2 py-1 rounded text-xs ${item.status === 'Won' ? 'bg-green-900 text-green-200' :
+                                                    item.status === 'Lost' ? 'bg-red-900 text-red-200' :
+                                                        'bg-gray-700 text-gray-300'
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                <button
+                                                    onClick={() => handleViewDetails(item.id)}
+                                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                                >
+                                                    View Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
 
             {/* Pending User Approvals Section */}
             <div className="card mb-6">

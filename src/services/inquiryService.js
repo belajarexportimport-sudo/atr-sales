@@ -50,6 +50,36 @@ export const inquiryService = {
         return data;
     },
 
+    /**
+     * Search inquiries by ID or Customer Name (Admin Feature)
+     * @param {string} query - Search term
+     */
+    async searchInquiries(query) {
+        if (!query) return [];
+
+        let dbQuery = supabase
+            .from('inquiries')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        // Check if query is a number (ID search)
+        if (!isNaN(query)) {
+            dbQuery = dbQuery.eq('id', query);
+        } else {
+            // Text search on customer name
+            dbQuery = dbQuery.ilike('customer_name', `%${query}%`);
+        }
+
+        const { data, error } = await dbQuery;
+
+        // If searching by text, also fetch Profile names for better context?
+        // For simplicity, just return inquiry data first.
+
+        handleError(error, 'searchInquiries');
+        return data || [];
+    },
+
 
 
 

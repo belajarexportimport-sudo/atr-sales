@@ -27,11 +27,10 @@ export default function TawkToChat() {
         // Function to set visitor attributes
         const setVisitorAttributes = () => {
             if (profile && window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
-                console.log("Setting Tawk.to attributes for:", profile.full_name);
                 window.Tawk_API.setAttributes({
                     name: profile.full_name || 'Unknown',
                     email: profile.email || '',
-                    hash: '', // Ensure no hash is sent if not used (security feature of Tawk.to)
+                    // hash: '', // REMOVED: Causing 500 error if not using Secure Mode
                     sales_code: profile.sales_code || '', // Custom attribute
                     role: profile.role || 'sales'
                 }, function (error) {
