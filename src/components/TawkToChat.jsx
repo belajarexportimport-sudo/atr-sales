@@ -24,17 +24,44 @@ export default function TawkToChat() {
             window.Tawk_API.showWidget();
         }
 
-        // Set user attributes for better tracking
-        if (profile && window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
-            window.Tawk_API.setAttributes({
-                name: profile.full_name || 'Unknown',
-                email: profile.email || '',
-                salesCode: profile.sales_code || '',
-                role: profile.role || 'sales'
-            }, function (error) {
-                if (error) console.error('Tawk.to setAttributes error:', error);
-            });
+        // Function to set visitor attributes
+        const setVisitorAttributes = () => {
+            if (profile && window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
+                console.log("Setting Tawk.to attributes for:", profile.full_name);
+                window.Tawk_API.setAttributes({
+                    name: profile.full_name || 'Unknown',
+                    email: profile.email || '',
+                    hash: '', // Ensure no hash is sent if not used (security feature of Tawk.to)
+                    sales_code: profile.sales_code || '', // Custom attribute
+                    role: profile.role || 'sales'
+                }, function (error) {
+                    if (error) console.error('Tawk.to setAttributes error:', error);
+                });
+            }
+        };
+
+        // Check if Tawk_API is ready
+        if (window.Tawk_API?.onLoaded) {
+            setVisitorAttributes();
+        } else {
+            // If not ready, hook into onLoad
+            // We need to be careful not to overwrite existing onLoad if any (though usually fine)
+            // Ideally, Tawk.to supports multiple callbacks? No, it's a global function.
+            // But for this app, we are the only consumer.
+
+            // Backup existing onLoad
+            const existingOnLoad = window.Tawk_API?.onLoad;
+
+            window.Tawk_API = window.Tawk_API || {};
+            window.Tawk_API.onLoad = function () {
+                if (existingOnLoad) existingOnLoad();
+                setVisitorAttributes();
+            };
         }
+
+        // Also try setting immediately in case it's missed
+        setVisitorAttributes();
+
     }, [profile]);
 
     return null; // This component doesn't render anything
