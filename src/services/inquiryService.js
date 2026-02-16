@@ -57,24 +57,22 @@ export const inquiryService = {
     async searchInquiries(query) {
         if (!query) return [];
 
-        let dbQuery = supabase
+        let searchTerm = query.trim();
+
+        // Handle "Q-" prefix (e.g. Q-70B38D17)
+        if (searchTerm.toUpperCase().startsWith('Q-')) {
+            searchTerm = searchTerm.substring(2);
+        }
+
+        // Use OR condition to search both ID (partial) and Customer Name (partial)
+        const dbQuery = supabase
             .from('inquiries')
             .select('*')
+            .or(`customer_name.ilike.%${searchTerm}%,id.ilike.${searchTerm}%`)
             .order('created_at', { ascending: false })
             .limit(20);
 
-        // Check if query is a number (ID search)
-        if (!isNaN(query)) {
-            dbQuery = dbQuery.eq('id', query);
-        } else {
-            // Text search on customer name
-            dbQuery = dbQuery.ilike('customer_name', `%${query}%`);
-        }
-
         const { data, error } = await dbQuery;
-
-        // If searching by text, also fetch Profile names for better context?
-        // For simplicity, just return inquiry data first.
 
         handleError(error, 'searchInquiries');
         return data || [];
