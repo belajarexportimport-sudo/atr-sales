@@ -57,25 +57,34 @@ export const inquiryService = {
     async searchInquiries(query) {
         if (!query) return [];
 
-        let searchTerm = query.trim();
+        let searchTerm = query.trim().replace(/^Q-/i, '').toLowerCase();
 
-        // Handle "Q-" prefix (e.g. Q-70B38D17)
-        if (searchTerm.toUpperCase().startsWith('Q-')) {
-            searchTerm = searchTerm.substring(2);
-        }
+        // CLIENT-SIDE FILTERING STRATEGY
+        // UUIDs don't support partial match (ilike) easily.
+        // We fetch the last 500 records and filter in JS.
+        // This is safer and avoids 404/400 errors.
 
-        // Use OR condition to search both ID (partial) and Customer Name (partial)
-        const dbQuery = supabase
+        const { data, error } = await supabase
             .from('inquiries')
             .select('*')
-            .or(`customer_name.ilike.%${searchTerm}%,id.ilike.${searchTerm}%`)
             .order('created_at', { ascending: false })
-            .limit(20);
+            .limit(500);
 
-        const { data, error } = await dbQuery;
+        if (error) {
+            handleError(error, 'searchInquiries');
+            return [];
+        }
 
-        handleError(error, 'searchInquiries');
-        return data || [];
+        if (!data) return [];
+
+        // Filter: ID contains search term OR Customer Name contains search term
+        const filtered = data.filter(item => {
+            const idMatch = item.id && item.id.toLowerCase().includes(searchTerm);
+            const nameMatch = item.customer_name && item.customer_name.toLowerCase().includes(searchTerm);
+            return idMatch || nameMatch;
+        });
+
+        return filtered.slice(0, 20);
     },
 
 
