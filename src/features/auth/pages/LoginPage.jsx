@@ -11,6 +11,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [agreeToTerms, setAgreeToTerms] = useState(false); // NEW: T&C State
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -120,10 +121,28 @@ export default function LoginPage() {
                         </button>
                     </div>
 
+                    {/* Terms & Conditions Checkbox (Sign Up Only) */}
+                    {isSignUp && (
+                        <div className="flex items-start mb-4">
+                            <div className="flex items-center h-5">
+                                <input
+                                    id="terms"
+                                    type="checkbox"
+                                    checked={agreeToTerms}
+                                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                />
+                            </div>
+                            <label htmlFor="terms" className="ml-2 text-sm text-gray-900">
+                                I agree to the <a hre="#" onClick={(e) => { e.preventDefault(); alert("Terms & Conditions:\n\n1. Use the app responsibly.\n2. Do not share credentials.\n3. Data is confidential."); }} className="text-blue-600 hover:underline">Terms and Conditions</a>
+                            </label>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={loading}
+                        disabled={loading || (isSignUp && !agreeToTerms)}
                     >
                         {loading ? (isSignUp ? 'Creating Account...' : 'Signing in...') : (isSignUp ? 'Create Account' : 'Sign In')}
                     </button>
