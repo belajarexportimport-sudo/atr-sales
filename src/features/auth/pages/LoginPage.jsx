@@ -124,16 +124,18 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    <div className="flex justify-end mb-4">
-                        <button
-                            type="button"
-                            onClick={() => window.location.href = '/forgot-password'} // Hack for now, will refactor if router exists
-                            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                            disabled={loading}
-                        >
-                            Forgot Password?
-                        </button>
-                    </div>
+                    {!isSignUp && (
+                        <div className="flex justify-end mb-4">
+                            <button
+                                type="button"
+                                onClick={() => window.location.href = '/forgot-password'} // Hack for now, will refactor if router exists
+                                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                                disabled={loading}
+                            >
+                                Forgot Password?
+                            </button>
+                        </div>
+                    )}
 
                     {/* Terms & Conditions Checkbox (Sign Up Only) */}
                     {isSignUp && (
