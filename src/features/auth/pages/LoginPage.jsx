@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import PasswordInput from '../../../components/PasswordInput';
+import TermsAndConditionsModal from '../../../components/TermsAndConditionsModal';
 
 export default function LoginPage() {
     const { signIn, signUp } = useAuth();
@@ -11,7 +12,8 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-    const [agreeToTerms, setAgreeToTerms] = useState(false); // NEW: T&C State
+    const [agreeToTerms, setAgreeToTerms] = useState(false);
+    const [showTermsModal, setShowTermsModal] = useState(false); // NEW: Modal state
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -134,10 +136,16 @@ export default function LoginPage() {
                                 />
                             </div>
                             <label htmlFor="terms" className="ml-2 text-sm text-gray-900">
-                                I agree to the <a hre="#" onClick={(e) => { e.preventDefault(); alert("Terms & Conditions:\n\n1. Use the app responsibly.\n2. Do not share credentials.\n3. Data is confidential."); }} className="text-blue-600 hover:underline">Terms and Conditions</a>
+                                I agree to the <a href="#" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="text-blue-600 hover:underline">Terms and Conditions</a>
                             </label>
                         </div>
                     )}
+
+                    {/* T&C Modal */}
+                    <TermsAndConditionsModal
+                        isOpen={showTermsModal}
+                        onClose={() => setShowTermsModal(false)}
+                    />
 
                     <button
                         type="submit"
