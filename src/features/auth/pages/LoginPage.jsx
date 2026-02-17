@@ -22,21 +22,33 @@ export default function LoginPage() {
         setLoading(true);
 
         if (isSignUp) {
-            // Sign Up
-            const { error: signUpError } = await signUp(email, password, { full_name: fullName });
+            // Sign Up with Timeout Failsafe
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 15000)
+            );
 
-            if (signUpError) {
-                console.error("SIGNUP ERROR DETAILS:", signUpError);
-                setError(signUpError.message || "Failed to sign up. Check console for details.");
+            try {
+                const { error: signUpError } = await Promise.race([
+                    signUp(email, password, { full_name: fullName }),
+                    timeoutPromise
+                ]);
+
+                if (signUpError) {
+                    console.error("SIGNUP ERROR DETAILS:", signUpError);
+                    setError(signUpError.message || "Failed to sign up.");
+                } else {
+                    setSuccessMessage('Account created! Please check your email to verify your account.');
+                    // Optionally switch to login mode after successful signup
+                    setTimeout(() => {
+                        setIsSignUp(false);
+                        setSuccessMessage('');
+                    }, 3000);
+                }
+            } catch (err) {
+                console.error("SIGNUP EXCEPTION:", err);
+                setError(err.message || "An unexpected error occurred.");
+            } finally {
                 setLoading(false);
-            } else {
-                setSuccessMessage('Account created! Please check your email to verify your account.');
-                setLoading(false);
-                // Optionally switch to login mode after successful signup
-                setTimeout(() => {
-                    setIsSignUp(false);
-                    setSuccessMessage('');
-                }, 3000);
             }
         } else {
             // Sign In
