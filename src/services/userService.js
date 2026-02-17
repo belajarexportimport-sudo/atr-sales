@@ -26,12 +26,26 @@ export const userService = {
      * For Admin Dashboard Todo List
      */
     async getPendingUsers() {
-        const { data, error } = await supabase.rpc('get_pending_users');
+        // FIXED: Use direct select to allow filtering by 'role' (RPC doesn't return role)
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, created_at, role, approved')
+            .eq('approved', false)
+            .neq('role', 'rejected') // Exclude rejected users
+            .order('created_at', { ascending: true });
+
         if (error) {
             console.error('Error fetching pending users:', error);
             return [];
         }
-        return data || [];
+
+        // Map to expected format if needed (OpsPage expects { user_id, ... })
+        return data.map(u => ({
+            user_id: u.id,
+            email: u.email,
+            full_name: u.full_name,
+            created_at: u.created_at
+        })) || [];
     },
 
     /**
@@ -53,11 +67,13 @@ export const userService = {
      * Used by: OperationsPage
      */
     async rejectUser(userId) {
-        // FIXED: Direct delete instead of potentially missing RPC
-        // Note: This only deletes the profile. The auth user remains but is effectively orphaned/rejected.
+        // FIXED: Soft delete by setting role to 'rejected' and approved to false
         const { error } = await supabase
             .from('profiles')
-            .delete()
+            .update({
+                approved: false,
+                role: 'rejected'
+            })
             .eq('id', userId);
 
         handleError(error, 'rejectUser');
