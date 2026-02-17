@@ -53,9 +53,13 @@ export const userService = {
      * Used by: OperationsPage
      */
     async rejectUser(userId) {
-        const { error } = await supabase.rpc('reject_user', {
-            p_user_id: userId
-        });
+        // FIXED: Direct delete instead of potentially missing RPC
+        // Note: This only deletes the profile. The auth user remains but is effectively orphaned/rejected.
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
+
         handleError(error, 'rejectUser');
         return true;
     }

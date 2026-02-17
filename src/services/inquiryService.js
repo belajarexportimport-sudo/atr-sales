@@ -450,7 +450,16 @@ export const inquiryService = {
      * Used by: OperationsPage
      */
     async rejectQuote(inquiryId) {
-        const { error } = await supabase.rpc('reject_quote', { p_inquiry_id: inquiryId });
+        // FIXED: Direct update instead of potentially missing RPC
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Rejected',
+                status: 'Lost', // Or keep current status? Usually rejected quote means deal lost or needs revision.
+                // Optionally clear financial data? No, keep history.
+            })
+            .eq('id', inquiryId);
+
         handleError(error, 'rejectQuote');
         return true;
     }

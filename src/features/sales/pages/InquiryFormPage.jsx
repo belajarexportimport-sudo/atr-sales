@@ -744,6 +744,28 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                         </>
                     )}
                     <button type="button" className="btn-secondary" onClick={() => onSuccess && onSuccess()} disabled={loading}>❌ Cancel</button>
+                    {isEditMode && profile?.role === 'admin' && (
+                        <button
+                            type="button"
+                            className="btn-danger ml-auto bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                            onClick={async () => {
+                                if (!confirm('Are you sure you want to REJECT this quote? Status will be set to Lost.')) return;
+                                try {
+                                    setLoading(true);
+                                    await inquiryService.rejectQuote(inquiry.id);
+                                    showToast('🚫 Quote Rejected', 'info');
+                                    if (onSuccess) onSuccess();
+                                } catch (err) {
+                                    showToast('Failed to reject: ' + err.message, 'error');
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            disabled={loading}
+                        >
+                            🚫 Reject Quote
+                        </button>
+                    )}
                 </div>
             </form>
         </div>
