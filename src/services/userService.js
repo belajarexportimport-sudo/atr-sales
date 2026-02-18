@@ -67,14 +67,11 @@ export const userService = {
      * Used by: OperationsPage
      */
     async rejectUser(userId) {
-        // FIXED: Soft delete by setting role to 'rejected' and approved to false
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                approved: false,
-                role: 'rejected'
-            })
-            .eq('id', userId);
+        // FIXED: Hard delete using RPC so user can be removed from auth.users too
+        // This allows them to sign up again if needed (cleaned up).
+        const { error } = await supabase.rpc('delete_user_completely', {
+            target_user_id: userId
+        });
 
         handleError(error, 'rejectUser');
         return true;
