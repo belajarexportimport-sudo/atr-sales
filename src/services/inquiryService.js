@@ -313,9 +313,10 @@ export const inquiryService = {
      * Grab an existing Lead (RPC)
      */
     async grabInquiry(inquiryId, userId) {
+        // FIXED: Updated parameter names to match V3 RPC (p_lead_id)
         const { data, error } = await supabase.rpc('grab_lead', {
-            lead_id: inquiryId,
-            grabber_id: userId
+            p_lead_id: inquiryId,
+            p_grabber_id: userId
         });
 
         handleError(error, 'grabInquiry');
