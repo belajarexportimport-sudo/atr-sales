@@ -123,11 +123,11 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
         let filteredData = data;
 
         // Frontend Filtering for Stats (Dynamic)
-        // Use original_user_id to preserve sales attribution
+        // FIXED: Use user_id (current owner) for Sales view so grabbed leads appear
         if (profile?.role === 'admin' && filterId !== 'all') {
-            filteredData = data.filter(inq => inq.original_user_id === filterId);
+            filteredData = data.filter(inq => inq.user_id === filterId);
         } else if (profile?.role !== 'admin') {
-            filteredData = data.filter(inq => inq.original_user_id === user?.id);
+            filteredData = data.filter(inq => inq.user_id === user?.id);
         }
 
         // --- REVENUE CALC ---
