@@ -312,15 +312,32 @@ export const inquiryService = {
     /**
      * Grab an existing Lead (RPC)
      */
+    /**
+     * Grab an existing Lead (DIRECT UPDATE)
+     * Bypasses RPC to rely on "Sales can grab open leads" RLS Policy
+     */
     async grabInquiry(inquiryId, userId) {
-        // FIXED: Updated parameter names to match V3 RPC (p_lead_id)
-        const { data, error } = await supabase.rpc('grab_lead', {
-            p_lead_id: inquiryId,
-            p_grabber_id: userId
-        });
+        console.log('🦈 Grabbing lead via DIRECT UPDATE:', { inquiryId, userId });
 
-        handleError(error, 'grabInquiry');
-        return data; // returns true/false
+        const { data, error } = await supabase
+            .from('inquiries')
+            .update({
+                user_id: userId,
+                status: 'Profiling',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', inquiryId)
+            .is('user_id', null) // Safety: ensure it's still open
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Grab Failed:', error);
+            handleError(error, 'grabInquiry');
+        }
+
+        console.log('✅ Grab Success:', data);
+        return true;
     },
 
     // --- QUOTATION APPROVALS (For Operations/Admin) ---
