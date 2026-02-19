@@ -8,6 +8,7 @@ export default function LeadFormModal({ lead, onClose }) {
     const [error, setError] = useState('');
     const [duplicateWarning, setDuplicateWarning] = useState('');
     const [checkingDuplicate, setCheckingDuplicate] = useState(false);
+
     const [formData, setFormData] = useState({
         company_name: '',
         pic_name: '',
@@ -28,7 +29,9 @@ export default function LeadFormModal({ lead, onClose }) {
                 industry: lead.industry || '',
                 status: lead.status || 'Cold',
                 notes: lead.notes || '',
+                risk_potential: lead.risk_potential || null, // Load existing risk
             });
+            if (lead.risk_potential) setRiskPotential(lead.risk_potential);
         }
     }, [lead]);
 
@@ -92,6 +95,7 @@ export default function LeadFormModal({ lead, onClose }) {
                 industry: formData.industry || null,
                 status: formData.status,
                 notes: formData.notes || null,
+                risk_potential: formData.risk_potential || null, // Include Risk Potential
             };
 
             if (lead) {
@@ -229,6 +233,7 @@ export default function LeadFormModal({ lead, onClose }) {
                                     <option value="Cold">Cold</option>
                                     <option value="Warm">Warm</option>
                                     <option value="Hot">Hot</option>
+                                    <option value="Closed-Won">Closed-Won</option>
                                 </select>
                             </div>
 

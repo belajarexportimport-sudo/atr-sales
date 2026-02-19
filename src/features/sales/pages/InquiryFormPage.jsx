@@ -334,8 +334,21 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
 
                 const result = await response.json();
                 console.log('✅ DIRECT UPDATE SUCCESS:', result);
+
+                // --- AUTO UPGRADE LEAD TO 'Closed-Won' ---
+                if (inquiryData.status === 'Won' && finalLeadId) {
+                    console.log('🏆 RFQ Won -> Upgrading Lead Status...');
+                    await supabase.from('leads').update({ status: 'Closed-Won' }).eq('id', finalLeadId);
+                }
+
             } else {
                 await inquiryService.create(inquiryData, profile?.role);
+
+                // --- AUTO UPGRADE LEAD TO 'Closed-Won' (New RFQ case) ---
+                if (inquiryData.status === 'Won' && finalLeadId) {
+                    console.log('🏆 RFQ Won -> Upgrading Lead Status...');
+                    await supabase.from('leads').update({ status: 'Closed-Won' }).eq('id', finalLeadId);
+                }
             }
 
             showToast('✅ Inquiry saved successfully!', 'success');
