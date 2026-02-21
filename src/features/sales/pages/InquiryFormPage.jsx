@@ -313,27 +313,8 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
             console.log('🚀 DEBUG: Submitting Inquiry Payload:', inquiryData); // ADDED FOR DEBUGGING
 
             if (inquiry?.id) {
-                console.log('🚀 UPDATE MODE - Direct API Call');
-
-                // DIRECT UPDATE via fetch API (bypass all cache)
-                const response = await fetch(`https://ewquycutqbtagjlokvyn.supabase.co/rest/v1/inquiries?id=eq.${inquiry.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3cXV5Y3V0cWJ0YWdqbG9rdnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTI3MjYsImV4cCI6MjA4NTE4ODcyNn0.FhdCAcK7nxIUk7zdoqxX9xyrjCslBUPXRBiWgugXu3s',
-                        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify(inquiryData)
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Failed to update inquiry');
-                }
-
-                const result = await response.json();
-                console.log('✅ DIRECT UPDATE SUCCESS:', result);
+                console.log('🚀 UPDATE MODE - Service Call');
+                await inquiryService.update(inquiry.id, inquiryData, profile?.role);
 
                 // --- AUTO UPGRADE LEAD TO 'Closed-Won' ---
                 if (inquiryData.status === 'Won' && finalLeadId) {
@@ -449,9 +430,9 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                                 <option>Won</option>
                                 <option>Won - Verification at WHS</option>
                                 <option>Lost</option>
-                                {profile?.is_admin && <option>Invoiced</option>}
-                                {profile?.is_admin && <option>Paid</option>}
-                                {profile?.is_admin && <option>Overdue</option>}
+                                {profile?.role === 'admin' && <option>Invoiced</option>}
+                                {profile?.role === 'admin' && <option>Paid</option>}
+                                {profile?.role === 'admin' && <option>Overdue</option>}
                             </select>
                         </div>
                     </div>

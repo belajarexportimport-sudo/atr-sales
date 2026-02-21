@@ -27,6 +27,7 @@
 - Quotation generation & printing
 - Commission tracking (10% of GP)
 - Leaderboard & performance analytics
+- [Shark Tank (Open Market)](#shark-tank-open-market)
 - Invoice generation (Proforma/Final)
 - Shipment tracking integration
 
@@ -64,7 +65,7 @@ src/
 ```
 Tables:
 - profiles          # User profiles (sales reps, admin)
-- inquiries         # RFQ/inquiry data
+- inquiries         # RFQ/inquiry data (includes Shark Tank)
 - leads            # Lead management
 - rates            # Shipping rates (optional)
 
@@ -75,6 +76,9 @@ RPC Functions:
 Row Level Security (RLS):
 - Sales: Can only see their own data
 - Admin: Can see all data
+- Shark Tank: Unassigned inquiries visible to all sales users
+
+**Detailed Guide:** See [SHARK_TANK_AND_RLS.md](./SHARK_TANK_AND_RLS.md) for architecture and recursion fixes.
 ```
 
 ---

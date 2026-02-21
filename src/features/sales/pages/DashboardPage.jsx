@@ -426,7 +426,7 @@ export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-700">
-                                    {getDisplayedInquiries().slice(0, 15).map((inquiry) => (
+                                    {getDisplayedInquiries().slice(0, profile?.role === 'admin' ? 50 : 25).map((inquiry) => (
                                         <tr key={inquiry.id} className="hover:bg-secondary-700/50 transition-colors">
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="font-medium text-gray-200">{inquiry.customer_name}</div>

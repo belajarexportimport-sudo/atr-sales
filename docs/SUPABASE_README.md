@@ -98,6 +98,15 @@ If `user_id` appears to change unexpectedly:
 
 ---
 
+## RLS Security & Performance
+
+### 🛡️ Preventing Infinite Recursion
+We use `SECURITY DEFINER` functions (e.g., `is_admin_safe()`) to prevent RLS policies from calling themselves, which causes total data blackout.
+
+**Learn more:** Read [SHARK_TANK_AND_RLS.md](./SHARK_TANK_AND_RLS.md) for the full architecture.
+
+---
+
 ## Migration History
 
 ### 2026-02-08: Added preserve_user_id_trigger

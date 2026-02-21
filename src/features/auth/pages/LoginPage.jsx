@@ -155,11 +155,7 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    {/* T&C Modal */}
-                    <TermsAndConditionsModal
-                        isOpen={showTermsModal}
-                        onClose={() => setShowTermsModal(false)}
-                    />
+
 
                     <button
                         type="submit"
@@ -173,9 +169,13 @@ export default function LoginPage() {
                 <div className="text-center mt-6">
                     <button
                         onClick={() => {
-                            setIsSignUp(!isSignUp);
+                            const nextIsSignUp = !isSignUp;
+                            setIsSignUp(nextIsSignUp);
                             setError('');
                             setSuccessMessage('');
+                            if (nextIsSignUp) {
+                                setShowTermsModal(true); // Auto-show T&C
+                            }
                         }}
                         className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                         disabled={loading}
@@ -187,7 +187,18 @@ export default function LoginPage() {
                 <p className="text-center text-sm text-gray-500 mt-4">
                     ATREX FORCE Team Only
                 </p>
-            </div>
-        </div>
+            </div >
+
+            {/* T&C Modal moved outside form to avoid nesting issues */}
+            < TermsAndConditionsModal
+                isOpen={showTermsModal}
+                onClose={() => setShowTermsModal(false)
+                }
+                onAgree={() => {
+                    setAgreeToTerms(true);
+                    setShowTermsModal(false);
+                }}
+            />
+        </div >
     );
 }

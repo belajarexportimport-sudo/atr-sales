@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function TermsAndConditionsModal({ isOpen, onClose }) {
+export default function TermsAndConditionsModal({ isOpen, onClose, onAgree }) {
     if (!isOpen) return null;
 
     return (
@@ -60,7 +60,7 @@ export default function TermsAndConditionsModal({ isOpen, onClose }) {
                         </tbody>
                     </table>
 
-                    <h3 className="font-bold text-lg text-primary-800 border-b pb-1 mt-4">SURAT PERJANJIAN KEMITRAAN DIGITAL</h3>
+                    <h3 className="font-bold text-lg text-primary-800 border-b pb-1 mt-4">SURAT PERJANJIAN KEMITRAAN DIGITAL (ATREX FORCE)</h3>
                     <div className="bg-gray-50 p-4 rounded border border-gray-200">
                         <p className="mb-2"><strong>NOMOR: [Auto-Generated-ID]</strong></p>
                         <p className="mb-2">Saya yang bertanda tangan di bawah ini, selanjutnya disebut sebagai "Afiliator", dengan ini menyatakan setuju untuk mengikatkan diri dalam kemitraan dengan PT Atrex International (selanjutnya disebut "Atrex") dengan ketentuan sebagai berikut:</p>
@@ -106,13 +106,21 @@ export default function TermsAndConditionsModal({ isOpen, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end">
+                <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="btn-primary"
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-100"
                     >
-                        Tutup & Lanjutkan
+                        Tutup
                     </button>
+                    {onAgree && (
+                        <button
+                            onClick={onAgree}
+                            className="btn-primary bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow-lg transform hover:scale-105 transition-all"
+                        >
+                            SAYA SETUJU & LANJUTKAN 🚀
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

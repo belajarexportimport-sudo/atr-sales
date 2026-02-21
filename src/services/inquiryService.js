@@ -19,7 +19,7 @@ export const inquiryService = {
         let query = supabase
             .from('inquiries')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('updated_at', { ascending: false });
 
         // Admin Filter Logic
         if (role === 'admin') {
@@ -85,6 +85,26 @@ export const inquiryService = {
         });
 
         return filtered.slice(0, 20);
+    },
+
+    /**
+     * Update an existing inquiry
+     * @param {string} id - Inquiry UUID
+     * @param {object} payload - Fields to update
+     * @param {string} role - User role for logic branching
+     */
+    async update(id, payload, role) {
+        console.log(`💾 UPDATING inquiry ${id}:`, payload);
+
+        const { data, error } = await supabase
+            .from('inquiries')
+            .update(payload)
+            .eq('id', id)
+            .select()
+            .single();
+
+        handleError(error, 'updateInquiry');
+        return data;
     },
 
 
