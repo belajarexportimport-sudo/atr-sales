@@ -72,9 +72,10 @@ export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
                     <div className="w-1/2 text-right">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">From:</h3>
                         <p className="font-bold text-lg">ATR Express International</p>
-                        <p className="text-sm">Ruko Golden Boulevard Blok W2 No. 19</p>
-                        <p className="text-sm">BSD City, Tangerang Selatan, 15318</p>
-                        <p className="text-sm">cs@atrexpress.com</p>
+                        <p className="text-sm">Grand Palace, Blok E - Lantai 4/401</p>
+                        <p className="text-sm">Jl Raya Pasar Minggu KM.16,- Pancoran, Jakarta Selatan - 12780</p>
+                        <p className="text-sm">021 -791 822 57 / 081319274281</p>
+                        <p className="text-sm">csinfo@atrexinternational.com</p>
                     </div>
                 </div>
 
