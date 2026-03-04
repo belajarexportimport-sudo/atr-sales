@@ -17,13 +17,31 @@ export default function TrackingPage() {
         setTrackingData(null);
 
         try {
-            console.log('Searching for AWB (trimmed):', awb);
-            const data = await trackingService.getHistory(awb);
+            console.log('Searching via App Script API:', awb);
+            const scriptUrl = `https://script.google.com/macros/s/AKfycbxGWqAOKQTuBnFtCjEq5CczzqcjS1mKjuM26VqYA0c8ioaZFmtj4JgwpfTZ3s3tNHoX/exec?action=track&awb=${encodeURIComponent(awb)}`;
+
+            const response = await fetch(scriptUrl);
+            const data = await response.json();
+
             console.log('Fetch Result:', data);
-            setTrackingData(data);
+
+            if (data && data.found) {
+                // Map Google Script format to PWA format
+                const mappedHistory = data.history.map((item, idx) => ({
+                    id: idx,
+                    status: item.status,
+                    location: item.location || '-',
+                    description: item.notes || '-',
+                    occurred_at: item.timestamp // Format is "03 Mar 2026 20:43" expected by formatDate or just rendered as string
+                }));
+                // The API returns newest first or oldest first? Based on screenshot, maybe oldest first? Let's just pass it through.
+                setTrackingData(mappedHistory);
+            } else {
+                setTrackingData([]);
+            }
         } catch (error) {
             console.error('Error fetching tracking:', error);
-            // Optional: User feedback handled by UI state
+            setTrackingData([]);
         } finally {
             setLoading(false);
         }
@@ -119,7 +137,7 @@ export default function TrackingPage() {
                                                 <div className="flex items-center justify-between space-x-2 mb-1">
                                                     <span className="font-bold text-gray-900">{event.status}</span>
                                                     <time className="font-mono text-xs text-gray-500 text-right">
-                                                        {formatDate(event.occurred_at)}
+                                                        {event.occurred_at} {/* From Sheets it's already a formatted string */}
                                                     </time>
                                                 </div>
                                                 <div className="text-sm text-gray-600">
