@@ -27,6 +27,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP POLICY IF EXISTS "inquiries_access_v2" ON public.inquiries;
 DROP POLICY IF EXISTS "admin_and_owner_select_v2" ON public.inquiries;
 DROP POLICY IF EXISTS "admin_select_all" ON public.inquiries;
+DROP POLICY IF EXISTS "inquiries_select_policy_v3" ON public.inquiries;
+DROP POLICY IF EXISTS "inquiries_update_policy_v3" ON public.inquiries;
 
 CREATE POLICY "inquiries_select_policy_v3"
 ON public.inquiries FOR SELECT
@@ -53,6 +55,7 @@ WITH CHECK (
 
 -- 3. PROFILES POLICIES
 DROP POLICY IF EXISTS "profiles_select_v2" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_v3" ON public.profiles;
 CREATE POLICY "profiles_select_v3"
 ON public.profiles FOR SELECT
 TO authenticated

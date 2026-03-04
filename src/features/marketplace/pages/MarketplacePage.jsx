@@ -91,11 +91,11 @@ export default function MarketplacePage() {
                             <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                                 <div className="bg-secondary-900/50 p-2 rounded">
                                     <span className="text-gray-500 text-xs block">Weight</span>
-                                    <span className="font-mono text-gray-300">{lead.est_weight} kg</span>
+                                    <span className="font-mono text-gray-300">{lead.weight || lead.est_weight || 0} kg</span>
                                 </div>
                                 <div className="bg-secondary-900/50 p-2 rounded">
                                     <span className="text-gray-500 text-xs block">Volume</span>
-                                    <span className="font-mono text-gray-300">{lead.est_volume} cbm</span>
+                                    <span className="font-mono text-gray-300">{lead.est_volume || 0} cbm</span>
                                 </div>
                                 <div className="bg-secondary-900/50 p-2 rounded col-span-2">
                                     <span className="text-gray-500 text-xs block">Est. Commission</span>

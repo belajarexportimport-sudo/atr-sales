@@ -70,8 +70,10 @@ export default function InvoicePrint({ inquiry, onClose }) {
                                 <h1 className="text-4xl font-black tracking-tighter italic">ATR<span className="text-gray-600">EXPRESS</span></h1>
                             </div>
                             <p className="text-sm font-bold uppercase">International Logistics Service</p>
-                            <p className="text-xs mt-2 w-64">
-                                Head Office: Grand Palace, Blok E – 401 Jl Raya Pasar Minggu KM.16,- Pancoran, Jakarta Selatan – 12780
+                            <p className="text-xs mt-2 w-80">
+                                Grand Palace, Blok E - Lantai 4/401 Jl Raya Pasar Minggu KM.16,- Pancoran, Jakarta Selatan - 12780<br />
+                                021 -791 822 57 / 081319274281<br />
+                                csinfo@atrexinternational.com - www.atrexinternational.com
                             </p>
                         </div>
                         <div className="text-right">
@@ -161,10 +163,11 @@ export default function InvoicePrint({ inquiry, onClose }) {
                         <div>
                             <h3 className="text-sm font-bold uppercase mb-2">Payment Details</h3>
                             <p className="text-xs text-gray-600">Please transfer to:</p>
-                            <div className="mt-2 text-sm">
-                                <p><span className="font-bold">Bank:</span> BCA (Bank Central Asia)</p>
-                                <p><span className="font-bold">Account:</span> 123-456-7890</p>
-                                <p><span className="font-bold">Name:</span> PT. ATR EXPRESS INTERNATIONAL</p>
+                            <div className="mt-2 text-sm space-y-1">
+                                <p><span className="font-bold">Bank:</span> BRI (Corporate)</p>
+                                <p><span className="font-bold">Name:</span> A.n PT ATR EXPRESS INTERNATIONAL</p>
+                                <p><span className="font-bold">Account:</span> 0012-01-003036-56-0</p>
+                                <p className="text-xs italic text-gray-500 mt-1">(Others Bank Code transaction: 002)</p>
                             </div>
                         </div>
                         <div className="text-right">
