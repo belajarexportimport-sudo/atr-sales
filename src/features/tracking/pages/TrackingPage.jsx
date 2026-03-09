@@ -11,14 +11,15 @@ export default function TrackingPage() {
     const handleTrack = async (e) => {
         e.preventDefault();
         if (!awb) return;
+        const normalizedAwb = awb.toUpperCase().trim();
 
         setLoading(true);
         setSearched(true);
         setTrackingData(null);
 
         try {
-            console.log('Searching via App Script API:', awb);
-            const scriptUrl = `https://script.google.com/macros/s/AKfycbxGWqAOKQTuBnFtCjEq5CczzqcjS1mKjuM26VqYA0c8ioaZFmtj4JgwpfTZ3s3tNHoX/exec?action=track&awb=${encodeURIComponent(awb)}`;
+            console.log('Searching via App Script API:', normalizedAwb);
+            const scriptUrl = `https://script.google.com/macros/s/AKfycbxGWqAOKQTuBnFtCjEq5CczzqcjS1mKjuM26VqYA0c8ioaZFmtj4JgwpfTZ3s3tNHoX/exec?action=track&awb=${encodeURIComponent(normalizedAwb)}`;
 
             const response = await fetch(scriptUrl);
             const data = await response.json();
@@ -72,7 +73,7 @@ export default function TrackingPage() {
                                 className="input-field text-center text-lg tracking-wider uppercase font-mono"
                                 placeholder="ATR-XXXXXXXX"
                                 value={awb}
-                                onChange={(e) => setAwb(e.target.value)}
+                                onChange={(e) => setAwb(e.target.value.toUpperCase())}
                                 required
                             />
                         </div>
