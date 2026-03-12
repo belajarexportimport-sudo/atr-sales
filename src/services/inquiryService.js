@@ -88,121 +88,13 @@ export const inquiryService = {
     },
 
     /**
-     * Update an existing inquiry
-     * @param {string} id - Inquiry UUID
-     * @param {object} payload - Fields to update
-     * @param {string} role - User role for logic branching
-     */
-    async update(id, payload, role) {
-        console.log(`💾 UPDATING inquiry ${id}:`, payload);
-
-        const { data, error } = await supabase
-            .from('inquiries')
-            .update(payload)
-            .eq('id', id)
-            .select()
-            .single();
-
-        handleError(error, 'updateInquiry');
-        return data;
-    },
-
-
-
-
-
-
-    /**
-     * Create inquiry with DUAL STRATEGY for guaranteed revenue save
-     * Strategy 1: Try normal INSERT (fast, standard)
-     * Strategy 2: Fallback to RPC if revenue not saved (guaranteed)
-     */
-    async create(inquiryData, userRole) {
-        // Prepare data
-        const dataToInsert = {
-            ...inquiryData,
-            quote_status: userRole === 'admin' ? 'Pending' : (inquiryData.quote_status || 'Draft')
-        };
-
-        // Parse financial fields
-        if (dataToInsert.est_revenue) {
-            dataToInsert.est_revenue = parseFloat(dataToInsert.est_revenue);
-        }
-        if (dataToInsert.est_gp) {
-            dataToInsert.est_gp = parseFloat(dataToInsert.est_gp);
-        }
-        if (dataToInsert.est_commission) {
-            dataToInsert.est_commission = parseFloat(dataToInsert.est_commission);
-        }
-
-        const hasFinancialData = userRole === 'admin' && dataToInsert.est_revenue > 0;
-
-        console.log('💾 CREATE inquiry:', {
-            customer: dataToInsert.customer_name,
-            revenue: dataToInsert.est_revenue,
-            gp: dataToInsert.est_gp,
-            hasFinancialData,
-            strategy: 'dual (INSERT + RPC fallback)'
-        });
-
-        // STRATEGY 1: Try normal INSERT first
-        try {
-            const { data, error } = await supabase
-                .from('inquiries')
-                .insert([dataToInsert])
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Verify revenue was saved (for admin with financial data)
-            if (hasFinancialData) {
-                if (!data.est_revenue || data.est_revenue === 0) {
-                    console.warn('⚠️ Revenue not saved via INSERT, trying RPC fallback...');
-                    throw new Error('Revenue not saved - RPC fallback required');
-                }
-            }
-
-            console.log('✅ INSERT success:', { id: data.id, revenue: data.est_revenue });
-            return data;
-
-        } catch (insertError) {
-            console.error('❌ INSERT failed:', insertError.message);
-
-            // STRATEGY 2: Admin with financial data - try RPC fallback
-            if (hasFinancialData) {
-                console.log('🔄 Trying RPC fallback: admin_create_inquiry_with_financials');
-
-                try {
-                    const { data: rpcData, error: rpcError } = await supabase
-                        .rpc('admin_create_inquiry_with_financials', {
-                            p_inquiry_data: dataToInsert
-                        });
-
-                    if (rpcError) throw rpcError;
-
-                    console.log('✅ RPC fallback success:', { id: rpcData.id, revenue: rpcData.est_revenue });
-                    return rpcData;
-
-                } catch (rpcError) {
-                    console.error('❌ RPC fallback failed:', rpcError.message);
-                    throw new Error(`Both INSERT and RPC failed: ${rpcError.message}`);
-                }
-            }
-
-            // If not admin or no financial data, throw original error
-            throw insertError;
-        }
-    },
-
-    /**
      * Update existing inquiry with safety checks
-     * SIMPLIFIED: Direct database update, NO RPC
+     * Consolidated to handle both admin and sales rep updates.
      */
     async update(id, updates, userRole) {
         const cleanUpdates = { ...updates };
 
-        console.log('💾 DIRECT UPDATE:', {
+        console.log('💾 UPDATING inquiry:', {
             id,
             userRole,
             revenue: cleanUpdates.est_revenue,
@@ -219,51 +111,21 @@ export const inquiryService = {
         }
 
         // Parse financial fields
-        if (cleanUpdates.est_revenue !== undefined) {
-            cleanUpdates.est_revenue = parseFloat(cleanUpdates.est_revenue || 0);
-        }
-        if (cleanUpdates.est_gp !== undefined) {
-            cleanUpdates.est_gp = parseFloat(cleanUpdates.est_gp || 0);
-        }
-        if (cleanUpdates.est_commission !== undefined) {
-            cleanUpdates.est_commission = parseFloat(cleanUpdates.est_commission || 0);
-        }
+        const financialFields = ['est_revenue', 'est_gp', 'est_commission', 'commission_amount'];
+        financialFields.forEach(field => {
+            if (cleanUpdates[field] !== undefined) {
+                cleanUpdates[field] = parseFloat(cleanUpdates[field] || 0);
+            }
+        });
 
         // If nothing to update, return early
         if (Object.keys(cleanUpdates).length === 0) {
             return { id };
         }
 
-        // DEBUG: Show exactly what will be sent to database
         console.log('📤 SENDING TO DATABASE:', cleanUpdates);
 
-        // ADMIN BYPASS: For revenue/GP updates, use direct API call to bypass RLS
-        if (userRole === 'admin' && (cleanUpdates.est_revenue !== undefined || cleanUpdates.est_gp !== undefined)) {
-            console.log('🔓 ADMIN BYPASS: Using fetch API to bypass RLS');
-
-            const response = await fetch(`https://ewquycutqbtagjlokvyn.supabase.co/rest/v1/inquiries?id=eq.${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3cXV5Y3V0cWJ0YWdqbG9rdnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MTI3MjYsImV4cCI6MjA4NTE4ODcyNn0.FhdCAcK7nxIUk7zdoqxX9xyrjCslBUPXRBiWgugXu3s',
-                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(cleanUpdates)
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                console.error('❌ ADMIN BYPASS FAILED:', error);
-                throw new Error(error.message || 'Failed to update via admin bypass');
-            }
-
-            const data = await response.json();
-            console.log('✅ ADMIN BYPASS SUCCESS:', data);
-            return data[0];
-        }
-
-        // Standard Update for non-admin or non-financial fields
+        // Try standard update first
         const { data, error } = await supabase
             .from('inquiries')
             .update(cleanUpdates)
@@ -271,7 +133,14 @@ export const inquiryService = {
             .select()
             .single();
 
-        handleError(error, 'updateInquiry');
+        if (error) {
+            // If RLS blocked it (common for admin updating sales data)
+            if (error.code === '42501' && userRole === 'admin') {
+                console.warn('⚠️ RLS blocked standard update. This usually means the Admin RLS policy is missing.');
+            }
+            handleError(error, 'updateInquiry');
+        }
+
         return data;
     },
 

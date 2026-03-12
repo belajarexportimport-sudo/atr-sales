@@ -103,6 +103,10 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
         if (inquiry) {
             setIsEditMode(true);
             setLeadId(inquiry.lead_id);
+            // NEW: If inquiry has no user_id, it's an Open Market lead
+            if (profile?.role === 'admin' && inquiry.user_id === null) {
+                setIsOpenMarket(true);
+            }
             const isApproved = inquiry.commission_status === 'Approved' || inquiry.commission_approved === true;
             const commissionValue = isApproved
                 ? (inquiry.commission_amount || inquiry.est_commission || 0)
@@ -265,12 +269,6 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                 email: formData.email,
                 industry: formData.industry,
             };
-            // Determine the correct user ID for this record (preserve if editing, assign if new)
-            // Determine the correct user ID for this record
-            // Logic: 
-            // 1. If Admin toggles "Open Market", user_id MUST be null (even if it was owned before)
-            // 2. If it's a NEW inquiry and NOT open market, it's owned by the creator (user.id)
-            // 3. If it's an EDIT and NOT open market, preserve the original owner (inquiry.user_id)
             // Determine the correct user ID for this record
             // Logic: 
             // 1. Admin + Open Market = null (unassigned)
@@ -279,7 +277,19 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
             // 4. New = current user claims it
             let targetUserId;
             if (profile?.role === 'admin') {
-                targetUserId = isOpenMarket ? null : (inquiry?.user_id ?? user.id);
+                if (isOpenMarket) {
+                    targetUserId = null;
+                } else {
+                    // If not open market, use existing owner or default to admin for NEW
+                    targetUserId = inquiry ? inquiry.user_id : user.id;
+                    // Note: if inquiry.user_id was null, and admin unchecked isOpenMarket, 
+                    // targetUserId becomes null here? No, if it was null and they want to assign IT TO THEMSELVES,
+                    // they should probably have a way. For now, if it was null and they uncheck, it should become them?
+                    // Let's use: (inquiry.user_id ?? user.id)
+                    if (inquiry && inquiry.user_id === null) {
+                        targetUserId = user.id; // Admin claims it by unchecking "Open Market"
+                    }
+                }
             } else if (inquiry?.id) {
                 targetUserId = (inquiry.user_id === null) ? user.id : inquiry.user_id;
             } else {

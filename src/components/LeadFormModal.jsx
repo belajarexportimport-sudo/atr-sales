@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LeadFormModal({ lead, onClose }) {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [duplicateWarning, setDuplicateWarning] = useState('');
@@ -88,7 +88,7 @@ export default function LeadFormModal({ lead, onClose }) {
         try {
             const leadData = {
                 // Admin preserves original owner (even if null). Sales claims if unassigned.
-                user_id: lead ? (profile?.role === 'admin' ? lead.user_id : (lead.user_id ?? user.id)) : user.id,
+                user_id: lead ? (profile?.role === 'admin' ? lead.user_id : (lead.user_id ?? user.id)) : (profile?.role === 'admin' ? null : user.id),
                 company_name: formData.company_name,
                 pic_name: formData.pic_name || null,
                 phone: formData.phone || null,
