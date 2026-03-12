@@ -265,12 +265,33 @@ export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onP
                 email: formData.email,
                 industry: formData.industry,
             };
-            const finalLeadId = await leadService.findOrCreate(user, leadData);
+            // Determine the correct user ID for this record (preserve if editing, assign if new)
+            // Determine the correct user ID for this record
+            // Logic: 
+            // 1. If Admin toggles "Open Market", user_id MUST be null (even if it was owned before)
+            // 2. If it's a NEW inquiry and NOT open market, it's owned by the creator (user.id)
+            // 3. If it's an EDIT and NOT open market, preserve the original owner (inquiry.user_id)
+            // Determine the correct user ID for this record
+            // Logic: 
+            // 1. Admin + Open Market = null (unassigned)
+            // 2. Admin + Edit = preserve original (unless null, then still null)
+            // 3. Sales + Edit = preserve original (unless null, then claim it)
+            // 4. New = current user claims it
+            let targetUserId;
+            if (profile?.role === 'admin') {
+                targetUserId = isOpenMarket ? null : (inquiry?.user_id ?? user.id);
+            } else if (inquiry?.id) {
+                targetUserId = (inquiry.user_id === null) ? user.id : inquiry.user_id;
+            } else {
+                targetUserId = user.id;
+            }
+
+            const finalLeadId = await leadService.findOrCreate(targetUserId, leadData);
 
             const inquiryData = {
                 lead_id: finalLeadId,
-                // OPEN MARKET LOGIC: If Admin checks 'isOpenMarket', user_id is NULL
-                user_id: (profile?.role === 'admin' && isOpenMarket) ? null : user.id,
+                // FIXED: If editing an inquiry, preserve the original user_id. For new, use assigning logic.
+                user_id: targetUserId,
                 customer_name: formData.customer_name,
                 pic: formData.pic || null,
                 industry: formData.industry || null,

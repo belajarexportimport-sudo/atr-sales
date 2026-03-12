@@ -87,7 +87,8 @@ export default function LeadFormModal({ lead, onClose }) {
 
         try {
             const leadData = {
-                user_id: user.id,
+                // Admin preserves original owner (even if null). Sales claims if unassigned.
+                user_id: lead ? (profile?.role === 'admin' ? lead.user_id : (lead.user_id ?? user.id)) : user.id,
                 company_name: formData.company_name,
                 pic_name: formData.pic_name || null,
                 phone: formData.phone || null,

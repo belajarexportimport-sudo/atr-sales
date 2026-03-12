@@ -12,13 +12,13 @@ export const leadService = {
      * Find existing lead or create a new one
      * Logic extracted from InquiryFormPage
      */
-    async findOrCreate(user, leadData) {
+    async findOrCreate(userId, leadData) {
         // 1. Check existing
         if (leadData.email || leadData.phone) {
             const { data: existingLead } = await supabase
                 .from('leads')
                 .select('id')
-                .eq('user_id', user.id)
+                .eq('user_id', userId)
                 .or(`email.eq.${leadData.email || 'null'},phone.eq.${leadData.phone || 'null'}`)
                 .maybeSingle();
 
@@ -30,7 +30,7 @@ export const leadService = {
         const { data: newLead, error } = await supabase
             .from('leads')
             .insert([{
-                user_id: user.id,
+                user_id: userId,
                 company_name: leadData.customer_name,
                 pic_name: leadData.pic || null,
                 phone: leadData.phone || null,
