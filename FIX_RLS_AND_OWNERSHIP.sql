@@ -1,5 +1,5 @@
--- === DATABASE FIX: Robust Ownership & Admin Save Fix ===
--- This script fixes "Cannot Save" issues for Admins and preserves Lead Ownership.
+-- === DATABASE FIX: Final Robust Ownership & Visibility Fix ===
+-- This script fixes "Cannot Save" issues, preserves Owner, AND enables Shark Tank visibility.
 
 -- 1. Ensure is_admin() function is robust
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -49,34 +49,34 @@ CREATE TRIGGER preserve_inquiry_owner
   BEFORE UPDATE ON public.inquiries
   FOR EACH ROW EXECUTE FUNCTION handle_ownership_preservation();
 
--- 5. REPAIR RLS POLICIES (Fix "Cannot Save" for Admins)
+-- 5. REPAIR RLS POLICIES (Fix "Cannot Save" and "Visibility" for Sales)
 
 -- -- LEADS -- --
-DROP POLICY IF EXISTS "Users can view own leads" ON public.leads;
+DROP POLICY IF EXISTS "Leads Select Policy" ON public.leads;
 CREATE POLICY "Leads Select Policy" ON public.leads FOR SELECT TO authenticated
-USING (is_admin() OR auth.uid() = user_id);
+USING (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
-DROP POLICY IF EXISTS "Users can insert own leads" ON public.leads;
+DROP POLICY IF EXISTS "Leads Insert Policy" ON public.leads;
 CREATE POLICY "Leads Insert Policy" ON public.leads FOR INSERT TO authenticated
 WITH CHECK (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
-DROP POLICY IF EXISTS "Users can update own leads" ON public.leads;
+DROP POLICY IF EXISTS "Leads Update Policy" ON public.leads;
 CREATE POLICY "Leads Update Policy" ON public.leads FOR UPDATE TO authenticated
-USING (is_admin() OR auth.uid() = user_id)
+USING (is_admin() OR auth.uid() = user_id OR user_id IS NULL)
 WITH CHECK (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
 -- -- INQUIRIES -- --
-DROP POLICY IF EXISTS "Users can view own inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Inquiries Select Policy" ON public.inquiries;
 CREATE POLICY "Inquiries Select Policy" ON public.inquiries FOR SELECT TO authenticated
-USING (is_admin() OR auth.uid() = user_id);
+USING (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
-DROP POLICY IF EXISTS "Users can insert own inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Inquiries Insert Policy" ON public.inquiries;
 CREATE POLICY "Inquiries Insert Policy" ON public.inquiries FOR INSERT TO authenticated
 WITH CHECK (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
-DROP POLICY IF EXISTS "Users can update own inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Inquiries Update Policy" ON public.inquiries;
 CREATE POLICY "Inquiries Update Policy" ON public.inquiries FOR UPDATE TO authenticated
-USING (is_admin() OR auth.uid() = user_id)
+USING (is_admin() OR auth.uid() = user_id OR user_id IS NULL)
 WITH CHECK (is_admin() OR auth.uid() = user_id OR user_id IS NULL);
 
 -- 6. Cleanup old problematic triggers
@@ -85,7 +85,7 @@ DROP TRIGGER IF EXISTS handle_inquiry_user ON public.inquiries;
 DROP TRIGGER IF EXISTS before_inquiry_update ON public.inquiries;
 DROP TRIGGER IF EXISTS preserve_user_id_trigger ON inquiries;
 
--- 7. Verify column status
+-- 7. Final Verification
 SELECT table_name, column_name, is_nullable, column_default
 FROM information_schema.columns
 WHERE table_name IN ('inquiries', 'leads') AND column_name = 'user_id';
