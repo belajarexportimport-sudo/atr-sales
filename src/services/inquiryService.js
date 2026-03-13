@@ -138,90 +138,93 @@ export const inquiryService = {
             if (error.code === '42501' && userRole === 'admin') {
                 console.warn('⚠️ RLS blocked standard update. This usually means the Admin RLS policy is missing.');
             }
-            return data;
-        },
+            handleError(error, 'updateInquiry');
+        }
+
+        return data;
+    },
 
     /**
      * Create new inquiry
      */
     async create(data, userRole) {
-            console.log('💾 CREATING inquiry:', data);
+        console.log('💾 CREATING inquiry:', data);
 
-            const cleanData = { ...data };
+        const cleanData = { ...data };
 
-            // Safety: Non-admin cannot set commission or approved status
-            if (userRole !== 'admin') {
-                delete cleanData.est_commission;
-                delete cleanData.commission_approved;
-                delete cleanData.commission_amount;
-            }
+        // Safety: Non-admin cannot set commission or approved status
+        if (userRole !== 'admin') {
+            delete cleanData.est_commission;
+            delete cleanData.commission_approved;
+            delete cleanData.commission_amount;
+        }
 
-            const { data: newInquiry, error } = await supabase
-                .from('inquiries')
-                .insert([cleanData])
-                .select()
-                .single();
+        const { data: newInquiry, error } = await supabase
+            .from('inquiries')
+            .insert([cleanData])
+            .select()
+            .single();
 
-            if (error) {
-                handleError(error, 'createInquiry');
-            }
+        if (error) {
+            handleError(error, 'createInquiry');
+        }
 
-            return newInquiry;
-        },
+        return newInquiry;
+    },
 
     /**
      * Delete inquiry
      */
-    async delete (id) {
-            const { error } = await supabase
-                .from('inquiries')
-                .delete()
-                .eq('id', id);
+    async delete(id) {
+        const { error } = await supabase
+            .from('inquiries')
+            .delete()
+            .eq('id', id);
 
-            handleError(error, 'deleteInquiry');
-            return true;
-        },
+        handleError(error, 'deleteInquiry');
+        return true;
+    },
 
     /**
      * Request AWB Number (RPC)
      */
     async requestAWB(inquiryId, userId, userInitials) {
-            const { data, error } = await supabase.rpc('request_awb', {
-                p_inquiry_id: inquiryId,
-                p_sales_rep_id: userId,
-                p_sales_initial: userInitials
-            });
+        const { data, error } = await supabase.rpc('request_awb', {
+            p_inquiry_id: inquiryId,
+            p_sales_rep_id: userId,
+            p_sales_initial: userInitials
+        });
 
-            handleError(error, 'requestAWB');
-            return data;
-        },
+        handleError(error, 'requestAWB');
+        return data;
+    },
 
     /**
      * Get Pending AWB Requests (RPC)
      */
     async getPendingAWBRequests() {
-            const { data, error } = await supabase.rpc('get_pending_awb_requests');
-            if (error) {
-                console.error('Error fetching pending AWB:', error);
-                return [];
-            }
-            return data || [];
-        },
+        const { data, error } = await supabase.rpc('get_pending_awb_requests');
+        if (error) {
+            console.error('Error fetching pending AWB:', error);
+            return [];
+        }
+        return data || [];
+    },
 
     /**
      * Get Open Inquiries (Unassigned)
      * Shows all inquiries where user_id is NULL, regardless of status
      */
     async getOpenInquiries() {
-            const { data, error } = await supabase
-                .from('inquiries')
-                .select('*')
-                .is('user_id', null)
-                .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+            .from('inquiries')
+            .select('*')
+            .is('user_id', null)
+            .order('created_at', { ascending: false });
 
-            handleError(error, 'getOpenInquiries');
-            return data || [];
-        },
+        handleError(error, 'getOpenInquiries');
+        return data || [];
+    },
 
     /**
      * Grab an existing Lead (RPC)
@@ -231,28 +234,28 @@ export const inquiryService = {
      * Bypasses RPC to rely on "Sales can grab open leads" RLS Policy
      */
     async grabInquiry(inquiryId, userId) {
-            console.log('🦈 Grabbing lead via DIRECT UPDATE:', { inquiryId, userId });
+        console.log('🦈 Grabbing lead via DIRECT UPDATE:', { inquiryId, userId });
 
-            const { data, error } = await supabase
-                .from('inquiries')
-                .update({
-                    user_id: userId,
-                    status: 'Profiling',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', inquiryId)
-                .is('user_id', null) // Safety: ensure it's still open
-                .select()
-                .single();
+        const { data, error } = await supabase
+            .from('inquiries')
+            .update({
+                user_id: userId,
+                status: 'Profiling',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', inquiryId)
+            .is('user_id', null) // Safety: ensure it's still open
+            .select()
+            .single();
 
-            if (error) {
-                console.error('❌ Grab Failed:', error);
-                handleError(error, 'grabInquiry');
-            }
+        if (error) {
+            console.error('❌ Grab Failed:', error);
+            handleError(error, 'grabInquiry');
+        }
 
-            console.log('✅ Grab Success:', data);
-            return true;
-        },
+        console.log('✅ Grab Success:', data);
+        return true;
+    },
 
     // --- QUOTATION APPROVALS (For Operations/Admin) ---
 
@@ -262,23 +265,23 @@ export const inquiryService = {
      * FIXED: Direct UPDATE instead of broken RPC
      */
     async requestQuoteApproval(inquiryId) {
-            console.log('📤 Requesting quote approval for:', inquiryId);
+        console.log('📤 Requesting quote approval for:', inquiryId);
 
-            const { error } = await supabase
-                .from('inquiries')
-                .update({
-                    quote_status: 'Pending'
-                })
-                .eq('id', inquiryId);
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Pending'
+            })
+            .eq('id', inquiryId);
 
-            if (error) {
-                console.error('❌ Failed to request approval:', error);
-                handleError(error, 'requestQuoteApproval');
-            }
+        if (error) {
+            console.error('❌ Failed to request approval:', error);
+            handleError(error, 'requestQuoteApproval');
+        }
 
-            console.log('✅ Quote approval requested');
-            return true;
-        },
+        console.log('✅ Quote approval requested');
+        return true;
+    },
 
     /**
      * Get Pending Quotes
@@ -286,50 +289,50 @@ export const inquiryService = {
      * FIXED: Direct SELECT instead of broken RPC
      */
     async getPendingQuotes() {
-            console.log('📋 Fetching pending quotes (Manual Join Mode)...');
+        console.log('📋 Fetching pending quotes (Manual Join Mode)...');
 
-            // 1. Fetch Inquiries ONLY (No Join to avoid 400 Error)
-            const { data: inquiries, error } = await supabase
-                .from('inquiries')
-                .select('*')
-                .eq('quote_status', 'Pending')
-                .order('created_at', { ascending: false });
+        // 1. Fetch Inquiries ONLY (No Join to avoid 400 Error)
+        const { data: inquiries, error } = await supabase
+            .from('inquiries')
+            .select('*')
+            .eq('quote_status', 'Pending')
+            .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error('❌ Failed to fetch pending quotes:', error);
-                handleError(error, 'getPendingQuotes');
-                return [];
+        if (error) {
+            console.error('❌ Failed to fetch pending quotes:', error);
+            handleError(error, 'getPendingQuotes');
+            return [];
+        }
+
+        // 2. Extract User IDs to fetch profiles manually
+        const userIds = [...new Set(inquiries.map(item => item.user_id).filter(Boolean))];
+        let profileMap = {};
+
+        if (userIds.length > 0) {
+            const { data: profiles, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', userIds);
+
+            if (profiles) {
+                profiles.forEach(p => {
+                    profileMap[p.id] = p.full_name;
+                });
             }
+        }
 
-            // 2. Extract User IDs to fetch profiles manually
-            const userIds = [...new Set(inquiries.map(item => item.user_id).filter(Boolean))];
-            let profileMap = {};
+        // 3. Map Value to match OperationsPage expectation
+        const mappedData = inquiries.map(item => ({
+            ...item,
+            inquiry_id: item.id, // CRITICAL: OperationsPage uses inquiry_id
+            sales_rep: profileMap[item.user_id] || 'Unknown',
+            origin: item.origin_city || item.origin || '-',
+            destination: item.destination_city || item.destination || '-'
+        }));
 
-            if (userIds.length > 0) {
-                const { data: profiles, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('id, full_name')
-                    .in('id', userIds);
-
-                if (profiles) {
-                    profiles.forEach(p => {
-                        profileMap[p.id] = p.full_name;
-                    });
-                }
-            }
-
-            // 3. Map Value to match OperationsPage expectation
-            const mappedData = inquiries.map(item => ({
-                ...item,
-                inquiry_id: item.id, // CRITICAL: OperationsPage uses inquiry_id
-                sales_rep: profileMap[item.user_id] || 'Unknown',
-                origin: item.origin_city || item.origin || '-',
-                destination: item.destination_city || item.destination || '-'
-            }));
-
-            console.log('✅ Pending quotes:', mappedData?.length || 0);
-            return mappedData;
-        },
+        console.log('✅ Pending quotes:', mappedData?.length || 0);
+        return mappedData;
+    },
 
     /**
      * Approve Quote
@@ -338,61 +341,61 @@ export const inquiryService = {
      */
 
     async approveQuote(inquiryId, approvedBy, revenue, gp) {
-            console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
+        console.log('🔧 APPROVE QUOTE:', { inquiryId, revenue, gp });
 
-            // CRITICAL: Fetch inquiry first to get original user_id
-            const { data: inquiry, error: fetchError } = await supabase
-                .from('inquiries')
-                .select('user_id, customer_name')
-                .eq('id', inquiryId)
-                .single();
+        // CRITICAL: Fetch inquiry first to get original user_id
+        const { data: inquiry, error: fetchError } = await supabase
+            .from('inquiries')
+            .select('user_id, customer_name')
+            .eq('id', inquiryId)
+            .single();
 
-            if (fetchError) {
-                console.error('❌ Failed to fetch inquiry:', fetchError);
-                throw fetchError;
-            }
+        if (fetchError) {
+            console.error('❌ Failed to fetch inquiry:', fetchError);
+            throw fetchError;
+        }
 
-            console.log('🔍 Original inquiry user_id:', inquiry.user_id);
+        console.log('🔍 Original inquiry user_id:', inquiry.user_id);
 
-            // Update with user_id preservation
-            const { error } = await supabase
-                .from('inquiries')
-                .update({
-                    quote_status: 'Approved',
-                    est_revenue: parseFloat(revenue),
-                    est_gp: parseFloat(gp || 0),
-                    est_commission: parseFloat(gp || 0) * 0.02,
-                    status: 'Proposal',
-                    commission_status: 'Pending',
-                    user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
-                })
-                .eq('id', inquiryId);
+        // Update with user_id preservation
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Approved',
+                est_revenue: parseFloat(revenue),
+                est_gp: parseFloat(gp || 0),
+                est_commission: parseFloat(gp || 0) * 0.02,
+                status: 'Proposal',
+                commission_status: 'Pending',
+                user_id: inquiry.user_id // 👈 CRITICAL: Preserve original owner
+            })
+            .eq('id', inquiryId);
 
-            if (error) {
-                console.error('❌ UPDATE error:', error);
-                handleError(error, 'approveQuote');
-            }
+        if (error) {
+            console.error('❌ UPDATE error:', error);
+            handleError(error, 'approveQuote');
+        }
 
-            console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
-            return true;
-        },
+        console.log('✅ Quote approved - user_id preserved:', inquiry.user_id);
+        return true;
+    },
 
     /**
      * Reject Quote
      * Used by: OperationsPage
      */
     async rejectQuote(inquiryId) {
-            // FIXED: Direct update instead of potentially missing RPC
-            const { error } = await supabase
-                .from('inquiries')
-                .update({
-                    quote_status: 'Rejected',
-                    status: 'Lost', // Or keep current status? Usually rejected quote means deal lost or needs revision.
-                    // Optionally clear financial data? No, keep history.
-                })
-                .eq('id', inquiryId);
+        // FIXED: Direct update instead of potentially missing RPC
+        const { error } = await supabase
+            .from('inquiries')
+            .update({
+                quote_status: 'Rejected',
+                status: 'Lost', // Or keep current status? Usually rejected quote means deal lost or needs revision.
+                // Optionally clear financial data? No, keep history.
+            })
+            .eq('id', inquiryId);
 
-            handleError(error, 'rejectQuote');
-            return true;
-        }
-    };
+        handleError(error, 'rejectQuote');
+        return true;
+    }
+};
