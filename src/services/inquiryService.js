@@ -145,7 +145,7 @@ export const inquiryService = {
     },
 
     /**
-     * Create new inquiry
+     * Create new inquiry (v4.7 Fix Deploy)
      */
     async create(data, userRole) {
         console.log('💾 CREATING inquiry:', data);
