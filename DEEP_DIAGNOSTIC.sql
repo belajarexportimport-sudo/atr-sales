@@ -1,76 +1,68 @@
--- DEEP ANALYSIS: What's REALLY blocking PT Amuka revenue from showing?
--- Let's check EVERYTHING that could prevent revenue display
+-- === DEEP DIAGNOSTIC: Why Save Fails? ===
 
--- 1. Check PT Amuka data (raw)
+-- 1. Check Table Structure & NOT NULL constraints
 SELECT 
-    id,
-    customer_name,
-    est_revenue,
-    est_gp,
-    est_commission,
-    status,
-    user_id,
-    created_at,
-    updated_at
-FROM inquiries
-WHERE customer_name ILIKE '%amuka%'
-ORDER BY created_at DESC
-LIMIT 1;
+    table_name, 
+    column_name, 
+    is_nullable, 
+    column_default, 
+    data_type
+FROM information_schema.columns 
+WHERE table_name IN ('inquiries', 'leads')
+AND (is_nullable = 'NO' AND column_default IS NULL)
+ORDER BY table_name;
 
--- 2. Check if there's a TRIGGER blocking updates
-SELECT 
-    trigger_name,
-    event_manipulation,
-    event_object_table,
-    action_statement
-FROM information_schema.triggers
-WHERE event_object_table = 'inquiries'
-AND trigger_name LIKE '%revenue%' OR trigger_name LIKE '%commission%';
-
--- 3. Check RLS policies that might BLOCK admin updates
-SELECT 
-    schemaname,
-    tablename,
-    policyname,
-    permissive,
-    roles,
-    cmd,
-    qual,
-    with_check
-FROM pg_policies
-WHERE tablename = 'inquiries'
-AND cmd = 'UPDATE';
-
--- 4. Check if there's a CONSTRAINT preventing revenue = 0
+-- 2. Check CHECK Constraints
 SELECT
     conname AS constraint_name,
-    contype AS constraint_type,
-    pg_get_constraintdef(oid) AS constraint_definition
+    conrelid::regclass AS table_name,
+    pg_get_constraintdef(oid) AS definition
 FROM pg_constraint
-WHERE conrelid = 'inquiries'::regclass
-AND conname LIKE '%revenue%';
+WHERE conrelid::regclass::text IN ('inquiries', 'leads')
+AND contype = 'c';
 
--- 5. Check if admin user has proper role
+-- 3. Check RLS Policies
 SELECT 
-    id,
-    email,
-    role,
-    created_at
-FROM profiles
-WHERE email = 'aditatrexpress@gmail.com';
+    tablename, 
+    policyname, 
+    cmd, 
+    qual, 
+    with_check
+FROM pg_policies 
+WHERE tablename IN ('inquiries', 'leads');
 
--- 6. Check if there's a VIEW or MATERIALIZED VIEW filtering revenue
+-- 4. Check Current User Identity & Admin Status
 SELECT 
-    table_name,
-    view_definition
-FROM information_schema.views
-WHERE table_schema = 'public'
-AND table_name LIKE '%inquir%';
+    auth.uid() as current_user_id,
+    p.email,
+    p.role,
+    public.is_admin() as is_admin_result
+FROM public.profiles p
+WHERE p.id = auth.uid();
 
--- HYPOTHESIS:
--- Maybe revenue IS being saved, but:
--- - A trigger is reverting it
--- - RLS is blocking the update
--- - A constraint is rejecting est_revenue = 0
--- - Frontend is filtering it out
--- - There's a caching issue
+-- 5. Check Active Triggers
+SELECT 
+    event_object_table AS table_name, 
+    trigger_name, 
+    event_manipulation AS event, 
+    action_timing AS timing,
+    action_statement AS statement
+FROM information_schema.triggers 
+WHERE event_object_table IN ('inquiries', 'leads');
+
+-- 6. Check for Foreign Key issues
+SELECT
+    tc.table_name, 
+    kcu.column_name, 
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name 
+FROM 
+    information_schema.table_constraints AS tc 
+    JOIN information_schema.key_column_usage AS kcu
+      ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage AS ccu
+      ON ccu.constraint_name = tc.constraint_name
+      AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY' 
+AND tc.table_name IN ('inquiries', 'leads');
