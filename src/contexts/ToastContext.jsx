@@ -30,6 +30,7 @@ export function ToastProvider({ children }) {
 }
 
 // Custom Hook
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
     return useContext(ToastContext);
 }

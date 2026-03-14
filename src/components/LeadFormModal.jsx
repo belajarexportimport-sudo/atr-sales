@@ -29,9 +29,8 @@ export default function LeadFormModal({ lead, onClose }) {
                 industry: lead.industry || '',
                 status: lead.status || 'Cold',
                 notes: lead.notes || '',
-                risk_potential: lead.risk_potential || null, // Load existing risk
+                risk_potential: lead.risk_potential || null,
             });
-            if (lead.risk_potential) setRiskPotential(lead.risk_potential);
         }
     }, [lead]);
 

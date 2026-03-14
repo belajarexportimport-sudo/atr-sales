@@ -1,6 +1,6 @@
 import { formatCurrency, formatDate } from '../../../lib/utils';
 
-export default function QuotationPage({ inquiry, lead, salesRep, onBack }) {
+export default function QuotationPage({ inquiry, salesRep, onBack }) { // removed unused lead
     if (!inquiry) return <div className="p-8 text-center">No inquiry data found for quotation.</div>;
 
     const totalWeight = inquiry.weight || (inquiry.packages || []).reduce((sum, p) => sum + (parseFloat(p.weight) || 0), 0);

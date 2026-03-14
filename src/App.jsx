@@ -47,7 +47,7 @@ function AppContent() {
 
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
       // console.log("AUTH EVENT:", event);
       if (event === 'PASSWORD_RECOVERY') {
         setCurrentPage('update-password');

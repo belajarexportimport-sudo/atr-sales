@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
-import { formatCurrency, getStatusColor, calculateCommission } from '../../../lib/utils';
+import { formatCurrency, getStatusColor } from '../../../lib/utils';
 import { exportInquiriesToExcel } from '../../../lib/exportUtils';
 // Services
 import { inquiryService } from '../../../services/inquiryService';
@@ -20,7 +19,7 @@ import AWBPrint from '../../../components/AWBPrint';
 export default function DashboardPage({ onEditInquiry, onQuote, onPrintInvoice }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
-    const { showConfirm } = useModal();
+    const { showConfirm } = useModal(); // eslint-disable-line no-unused-vars
     // ... (existing state)
     const [printingAWB, setPrintingAWB] = useState(null);
 

@@ -309,7 +309,7 @@ export const inquiryService = {
         let profileMap = {};
 
         if (userIds.length > 0) {
-            const { data: profiles, error: profileError } = await supabase
+            const { data: profiles } = await supabase
                 .from('profiles')
                 .select('id, full_name')
                 .in('id', userIds);

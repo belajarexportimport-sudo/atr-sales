@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navigation({ currentPage, onNavigate }) {
-    const { user, profile, signOut } = useAuth();
+    const { profile, signOut } = useAuth();
 
     const handleLogout = async () => {
         await signOut();

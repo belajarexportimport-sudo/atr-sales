@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { inquiryService } from '../../../services/inquiryService';
 import { useToast } from '../../../contexts/ToastContext';
-import { formatCurrency, formatDate } from '../../../lib/utils';
+import { formatCurrency } from '../../../lib/utils';
 
 export default function MarketplacePage() {
-    const { user, profile } = useAuth();
+    const { user } = useAuth();
     const { showToast } = useToast();
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export default function MarketplacePage() {
                 showToast('❌ Too slow! Someone else took it.', 'error');
                 fetchLeads(); // Refresh to sync
             }
-        } catch (error) {
+        } catch (error) { // eslint-disable-line no-unused-vars
             showToast('Error grabbing lead', 'error');
         } finally {
             setGrabbingId(null);

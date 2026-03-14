@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { useModal } from '../../../contexts/ModalContext'; // Import Modal
-import { calculateCommission, formatCurrency } from '../../../lib/utils';
+import { formatCurrency } from '../../../lib/utils';
 import { inquiryService } from '../../../services/inquiryService';
 import { commissionService } from '../../../services/commissionService';
 import { leadService } from '../../../services/leadService'; import { supabase } from '../../../lib/supabase';
@@ -12,7 +12,7 @@ import ConsigneeForm from '../components/ConsigneeForm';
 export default function InquiryFormPage({ lead, inquiry, onSuccess, onQuote, onPrintInvoice }) {
     const { user, profile } = useAuth();
     const { showToast } = useToast();
-    const { showConfirm } = useModal(); // Hook
+    const { showConfirm } = useModal(); // eslint-disable-line no-unused-vars
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [leadId, setLeadId] = useState(null);

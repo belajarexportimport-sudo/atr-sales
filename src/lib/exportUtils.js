@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 /**
  * Format number as Indonesian Rupiah
  */
-function formatRupiah(value) {
+function formatRupiah(value) { // eslint-disable-line no-unused-vars
     if (!value || value === 0) return 'Rp 0';
     return `Rp ${value.toLocaleString('id-ID')}`;
 }
@@ -89,7 +89,7 @@ export async function exportInquiriesToExcel(inquiries, filename) {
         worksheet.getColumn('I').alignment = { horizontal: 'center' };
 
         // Add borders to all cells
-        worksheet.eachRow((row, rowNumber) => {
+        worksheet.eachRow((row) => {
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin', color: { argb: 'FFE5E7EB' } },

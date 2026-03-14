@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { trackingService } from '../../../services/trackingService';
-import { formatDate } from '../../../lib/utils';
+import { formatDate } from '../../../lib/utils'; // eslint-disable-line no-unused-vars
 
 export default function TrackingPage() {
     const [awb, setAwb] = useState('');

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { inquiryService } from '../../../services/inquiryService';
 import { userService } from '../../../services/userService';
 import { formatCurrency } from '../../../lib/utils'; // Assumed utils exist
 import { exportLeaderboardToExcel } from '../../../lib/exportUtils';

@@ -47,6 +47,7 @@ export function ModalProvider({ children }) {
 }
 
 // Custom Hook
+// eslint-disable-next-line react-refresh/only-export-components
 export function useModal() {
     return useContext(ModalContext);
 }
